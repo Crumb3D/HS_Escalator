@@ -1,0 +1,35 @@
+<configs>
+	<append xpath="/items">
+
+		<item name="hsescalatorTool">
+			<property name="Tags" value="tool,noMods,electricianSkill"/>
+			<property name="CreativeMode" value="Player"/>
+			<property name="HoldType" value="29"/>
+			<property name="Meshfile" value="@:Other/Items/Tools/wrenchPrefab.prefab"/>
+			<property name="DropMeshfile" value="@:Other/Items/Misc/sack_droppedPrefab.prefab"/>
+			<property name="CustomIcon" value="meleeToolSalvageT1Wrench"/>
+			<property name="CustomIconTint" value="e8a020"/>
+			<property name="TintColor" value="232, 160, 32"/>
+			<property name="Material" value="Mmetal"/>
+			<property name="DescriptionKey" value="hsescalatorToolDesc"/>
+			<property name="UnlockedBy" value="craftingElectrician"/>
+			<property name="Stacknumber" value="1"/>
+			<property name="DegradationBreaksAfter" value="false"/>
+			<property name="EconomicValue" value="60"/>
+			<property name="SellableToTrader" value="false"/>
+			<property name="SoundUnholster" value="weapon_unholster"/>
+			<property name="SoundHolster" value="weapon_holster"/>
+			<property name="SoundPickup" value="wrench_grab"/>
+			<property name="SoundPlace" value="wrench_place"/>
+			<property class="Action0">
+				<property name="Class" value="HSEscalatorTool, HSEscalator"/>
+			</property>
+			<property class="Action1">
+				<property name="Class" value="HSEscalatorTool, HSEscalator"/>
+			</property>
+			<property name="Group" value="Science,TCScience,Tools/Traps"/>
+			<property name="FilterTags" value="MC_playerBlocks,SC_electrical"/>
+		</item>
+
+	</append>
+</configs>

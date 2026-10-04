@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xml>
+  <Name value="HSEscalator" />
+  <DisplayName value="HS Escalator" />
+  <Description value="Player-built escalators and moving walkways. You place the half-block steps; the setup tool marks the deck and a drive. Admin: hsescalator" />
+  <Author value="Crumb" />
+  <Version value="1.0.0" />
+  <SkipWithAntiCheat value="true" />
+</xml>

@@ -1,0 +1,16 @@
+HSEscalator.json
+
+Source/Directory.Build.props
+
+Source/obj/
+Source/bin/
+*.dll.new
+
+.codegpt-game.json
+.vs/
+*.user
+*.suo
+
+Thumbs.db
+Desktop.ini
+.DS_Store

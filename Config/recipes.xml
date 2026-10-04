@@ -1,0 +1,17 @@
+<configs>
+	<append xpath="/recipes">
+
+		<recipe name="hsescalatorDrive" count="1" craft_area="workbench" tags="perkAdvancedEngineering,learnable">
+			<ingredient name="resourceForgedIron" count="4"/>
+			<ingredient name="resourceMechanicalParts" count="4"/>
+			<ingredient name="resourceElectricParts" count="2"/>
+		</recipe>
+
+		<recipe name="hsescalatorTool" count="1" craft_area="workbench" tags="perkAdvancedEngineering,learnable">
+			<ingredient name="resourceForgedIron" count="4"/>
+			<ingredient name="resourceMechanicalParts" count="2"/>
+			<ingredient name="resourceElectricParts" count="2"/>
+		</recipe>
+
+	</append>
+</configs>
