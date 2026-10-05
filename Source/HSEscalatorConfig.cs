@@ -39,6 +39,8 @@ public class HSEscalatorConfigData
     public float Speed = 0.6f;
     public int Direction = 1;
     public bool Running;
+    public bool WantedOn = true;
+    public bool RunWhenOccupied;
     public float Phase;
     public string StopReason;
     public bool Debug;
@@ -233,6 +235,14 @@ public static class HSEscalatorConfig
         if (d.Width < 1) d.Width = 1;
         if (d.RunSign == 0) d.RunSign = 1;
         if (d.Heights != null && d.Heights.Length != d.Length) d.HasDeck = false;
+        if (d.HasDeck && !d.Captured && d.Steps != null && d.Steps.Count > 0)
+            d.Captured = true;
+        if (!string.IsNullOrEmpty(d.StopReason)
+            && (d.StopReason.IndexOf("comb", StringComparison.OrdinalIgnoreCase) >= 0
+                || d.StopReason.IndexOf("someone", StringComparison.OrdinalIgnoreCase) >= 0
+                || d.StopReason.IndexOf("folding", StringComparison.OrdinalIgnoreCase) >= 0
+                || d.StopReason.IndexOf("landing", StringComparison.OrdinalIgnoreCase) >= 0))
+            d.StopReason = null;
     }
 
     public static void Save()
@@ -319,10 +329,10 @@ public static class HSEscalatorConfig
     {
         if (d == null) return "none";
         if (!d.HasDeck)
-            return d.EscalatorId + ": no steps yet" + (d.HasDrive ? " (drive ok)" : " (no drive)");
+            return d.EscalatorId + ": no steps yet" + (d.HasDrive ? " (panel ok)" : " (no panel)");
         var kind = d.IsWalkway ? "walkway" : ("rise " + d.RiseHalf);
         return d.EscalatorId + ": " + d.Length + "x" + d.Width + " " + kind
-            + (d.HasDrive ? "" : " (no drive)")
+            + (d.HasDrive ? "" : " (no panel)")
             + (d.Running ? " running" : "");
     }
 

@@ -7,6 +7,7 @@ public class HSEscalatorSlotPose
     public float Col;
     public float TreadTop;
     public float FoldDeg;
+    public float FoldSpin;
     public bool OnReturn;
     public Vector3 Center;
 }
@@ -48,12 +49,12 @@ public class HSEscalatorBelt
         var pin = Root.AddComponent<HSEscalatorPinnedLooks>();
         int n = path.SlotCount;
         int layer = 16;
+        int proto = path.PrototypeCol();
         for (int i = 0; i < n; i++)
         {
             var slot = new GameObject("slot" + i);
             slot.transform.SetParent(Root.transform, false);
-            int srcCol = i % path.Length;
-            BuildSlot(world, slot.transform, srcCol, pin, ref layer);
+            BuildSlot(world, slot.transform, proto, pin, ref layer);
             slots.Add(slot.transform);
             lastCenter.Add(Vector3.zero);
             lastDelta.Add(Vector3.zero);
@@ -88,6 +89,7 @@ public class HSEscalatorBelt
                         foreach (var col in model.GetComponentsInChildren<Collider>(true)) col.enabled = false;
                         foreach (var mb in model.GetComponentsInChildren<MonoBehaviour>(true)) mb.enabled = false;
                         pin.Keep(model);
+                        HSEscalatorPaint.Apply(model);
                     }
                 }
             }
@@ -130,7 +132,7 @@ public class HSEscalatorBelt
             Eval(s, 0, out pose);
             var t = slots[i];
             t.position = pose.Center;
-            t.rotation = FoldRotation(pose.FoldDeg);
+            t.rotation = FoldRotation(pose.FoldSpin);
             if (i < lastCenter.Count)
             {
                 var was = lastCenter[i];
@@ -144,12 +146,13 @@ public class HSEscalatorBelt
     {
         pose = new HSEscalatorSlotPose();
         if (path == null) return false;
-        float col, top, fold;
+        float col, top, fold, spin;
         bool ret;
-        path.SlotPose(s, out col, out top, out fold, out ret);
+        path.SlotPose(s, out col, out top, out fold, out spin, out ret);
         pose.Col = col;
         pose.TreadTop = top;
         pose.FoldDeg = fold;
+        pose.FoldSpin = spin;
         pose.OnReturn = ret;
         float x, z;
         path.WorldXZ(col, lane, out x, out z);
@@ -157,12 +160,20 @@ public class HSEscalatorBelt
         return true;
     }
 
-    Quaternion FoldRotation(float foldDeg)
+    Quaternion FoldRotation(float foldSpin)
     {
-        if (path == null || foldDeg < 0.5f) return Quaternion.identity;
-        var axis = path.RunAxis == 0 ? Vector3.forward : Vector3.right;
-        if (path.RunSign < 0) foldDeg = -foldDeg;
-        return Quaternion.AngleAxis(foldDeg, axis);
+        if (path == null) return Quaternion.identity;
+        float spin = foldSpin % 360f;
+        if (spin < 0f) spin += 360f;
+        if (spin < 0.5f || spin > 359.5f) return Quaternion.identity;
+        // One rotation sense for the whole loop: top dives 0→180, bottom
+        // keeps going 180→360 instead of unwinding the other way.
+        var travel = path.RunAxis == 0
+            ? new Vector3(path.RunSign, 0f, 0f)
+            : new Vector3(0f, 0f, path.RunSign);
+        var axis = Vector3.Cross(travel, Vector3.up);
+        if (axis.sqrMagnitude < 0.0001f) return Quaternion.identity;
+        return Quaternion.AngleAxis(-spin, axis.normalized);
     }
 
     public bool StepUnder(Vector3 worldFeet, out HSEscalatorSlotPose pose, out Vector3 delta)
@@ -178,7 +189,7 @@ public class HSEscalatorBelt
         {
             HSEscalatorSlotPose p;
             if (!Eval(bound.Phase + i, 0, out p)) continue;
-            if (p.OnReturn || p.FoldDeg > 25f) continue;
+            if (p.OnReturn || p.FoldDeg >= 80f) continue;
             var c = p.Center + Origin.position;
             float dx = worldFeet.x - c.x;
             float dz = worldFeet.z - c.z;

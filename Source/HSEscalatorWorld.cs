@@ -352,7 +352,7 @@ public static class HSEscalatorWorld
         return null;
     }
 
-    public static void Restore(World world, HSEscalatorConfigData d)
+    public static void Restore(World world, HSEscalatorConfigData d, bool keepCaptured = false)
     {
         if (world == null || d == null || !d.Captured || d.Steps == null || d.Steps.Count == 0) return;
         var path = d.ToPath();
@@ -370,7 +370,7 @@ public static class HSEscalatorWorld
             changes.Add(new BlockChangeInfo(pos, bv, s.Density, FromLongs(s.Tex)));
         }
         if (changes.Count > 0) world.SetBlocksRPC(changes);
-        d.Captured = false;
+        if (!keepCaptured) d.Captured = false;
         HSEscalatorDebug.Info("Restored " + changes.Count + " step(s) for " + d.EscalatorId);
     }
 
@@ -406,7 +406,7 @@ public static class HSEscalatorWorld
             path.WorldXZ(c, w, out x, out z);
             int y = HSEscalatorPath.BlockYFromHeight(path.Heights[c]);
             var step = new Vector3i(x, y, z);
-            if (world.GetChunkFromWorldPos(step) == null) return "part of the escalator is too far away to load (" + step + ")";
+            if (world.GetChunkFromWorldPos(step) == null) continue;
             if (d.Captured)
             {
                 var fill = world.GetBlock(step);
@@ -424,6 +424,43 @@ public static class HSEscalatorWorld
             }
         }
         return null;
+    }
+
+    public static bool TryLandingStand(World world, HSEscalatorPath path, bool lowEnd, Vector3 feet, out Vector3 stand)
+    {
+        stand = feet;
+        if (path == null) return false;
+        int lane = 0;
+        if (path.Width > 1)
+        {
+            if (path.RunAxis == 0)
+                lane = Mathf.Clamp(Mathf.FloorToInt(feet.z) - path.LaneMinZ, 0, path.Width - 1);
+            else
+                lane = Mathf.Clamp(Mathf.FloorToInt(feet.x) - path.LaneMinX, 0, path.Width - 1);
+        }
+        int x, z;
+        path.OutsideLanding(lowEnd, lane, out x, out z);
+        int col = lowEnd ? 0 : path.Length - 1;
+        float want = HSEscalatorPath.TreadTop(path.Heights[col]);
+        if (world != null)
+        {
+            int y0 = HSEscalatorPath.BlockYFromHeight(path.Heights[col]);
+            for (int y = y0 - 1; y <= y0; y++)
+            {
+                var pos = new Vector3i(x, y, z);
+                if (world.GetChunkFromWorldPos(pos) == null) continue;
+                var bv = world.GetBlock(pos);
+                if (bv.isair || bv.Block == null) continue;
+                Bounds box;
+                float top = y + 1f;
+                if (UnionBounds(bv, out box)) top = y + box.max.y;
+                if (Math.Abs(top - want) <= 0.55f) want = top;
+            }
+        }
+        stand = new Vector3(x + 0.5f, want, z + 0.5f);
+        if (path.RunAxis == 0) stand.z = feet.z;
+        else stand.x = feet.x;
+        return true;
     }
 
     public static bool LandingWalkable(World world, HSEscalatorConfigData d, bool lowEnd, out string problem)

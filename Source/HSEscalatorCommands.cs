@@ -21,7 +21,7 @@ public class ConsoleCmdHSEscalator : ConsoleCmdAbstract
             "Admin only. Players: hold the Escalator Setup Tool and hold E.\n" +
             "hsescalator new               - start a new escalator\n" +
             "hsescalator end1 | end2       - mark opposite corners of the step deck\n" +
-            "hsescalator drive             - register the aimed Escalator Drive\n" +
+            "hsescalator drive             - register the aimed Escalator Panel\n" +
             "hsescalator list | select     - list / aim to edit that one\n" +
             "hsescalator jog | reverse     - preview motion / flip direction\n" +
             "hsescalator forget            - put the half-blocks back and clear this one\n" +

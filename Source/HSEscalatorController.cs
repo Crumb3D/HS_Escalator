@@ -53,7 +53,8 @@ public class HSEscalatorController : MonoBehaviour
         foreach (var c in all)
         {
             if (c == null || c.Bound == null) continue;
-            if (HSEscalatorNet.IsAuthority && world != null) HSEscalatorWorld.Restore(world, c.Bound);
+            if (HSEscalatorNet.IsAuthority && world != null)
+                HSEscalatorWorld.Restore(world, c.Bound, true);
             c.belt.Destroy();
         }
         if (HSEscalatorNet.IsAuthority) HSEscalatorConfig.Save();
@@ -83,8 +84,13 @@ public class HSEscalatorController : MonoBehaviour
 
     public string Reverse()
     {
+        return SetDirection(Bound != null && Bound.Direction < 0 ? 1 : -1);
+    }
+
+    string SetDirection(int dir)
+    {
         if (Bound == null) return "No escalator.";
-        Bound.Direction = Bound.Direction < 0 ? 1 : -1;
+        Bound.Direction = dir < 0 ? -1 : 1;
         Bound.StopReason = null;
         HSEscalatorConfig.Save();
         HSEscalatorNet.BroadcastState(Bound);
@@ -93,11 +99,54 @@ public class HSEscalatorController : MonoBehaviour
 
     public static string ReverseDrive(Vector3i pos)
     {
+        return DriveCommand(pos, "reverse");
+    }
+
+    public static string DriveCommand(Vector3i pos, string cmd)
+    {
         var d = HSEscalatorConfig.DriveOwner(pos);
         if (d == null) return Localization.Get("hsescalatorUnregistered");
         HSEscalatorConfig.Use(d);
         var c = Ensure(d);
-        return c != null ? c.Reverse() : "No controller.";
+        return c != null ? c.ApplyPanel(cmd) : "No controller.";
+    }
+
+    public string ApplyPanel(string cmd)
+    {
+        if (Bound == null) return "No escalator.";
+        if (cmd == "forward") return SetDirection(1);
+        if (cmd == "reverse") return SetDirection(-1);
+        if (cmd == "toggleDir") return Reverse();
+        if (cmd == "start")
+        {
+            Bound.WantedOn = true;
+            Bound.StopReason = null;
+            Bound.Running = true;
+            HSEscalatorConfig.Save();
+            HSEscalatorNet.BroadcastState(Bound);
+            return Bound.EscalatorId + " started.";
+        }
+        if (cmd == "stop")
+        {
+            Bound.WantedOn = false;
+            Bound.Running = false;
+            HSEscalatorConfig.Save();
+            HSEscalatorNet.BroadcastState(Bound);
+            return Bound.EscalatorId + " stopped.";
+        }
+        if (cmd == "always")
+        {
+            Bound.RunWhenOccupied = false;
+            HSEscalatorConfig.Save();
+            return Bound.EscalatorId + " runs whenever it has power.";
+        }
+        if (cmd == "occupied")
+        {
+            Bound.RunWhenOccupied = true;
+            HSEscalatorConfig.Save();
+            return Bound.EscalatorId + " runs when something is on it.";
+        }
+        return "Unknown panel command.";
     }
 
     public void ApplyRemoteState(float phase, int dir, bool running, string reason)
@@ -107,6 +156,17 @@ public class HSEscalatorController : MonoBehaviour
         Bound.Direction = dir;
         Bound.Running = running;
         Bound.StopReason = reason;
+    }
+
+    void AdvancePhase(float dt)
+    {
+        if (Bound == null) return;
+        Bound.Phase += Bound.Direction * Bound.Speed * dt;
+        var L = Bound.ToPath();
+        float loop = L != null ? L.LoopLength : 2f;
+        if (loop < 1f) loop = 1f;
+        Bound.Phase %= loop;
+        if (Bound.Phase < 0f) Bound.Phase += loop;
     }
 
     public void RebuildBelt()
@@ -138,7 +198,7 @@ public class HSEscalatorController : MonoBehaviour
 
         if (Bound.Captured && Bound.HasDeck)
         {
-            if (HSEscalatorNet.IsAuthority && !beltReady)
+            if (HSEscalatorNet.IsAuthority)
                 HSEscalatorWorld.EnsureCapturedRemoved(world, Bound);
             if (!belt.IsBuilt)
             {
@@ -159,35 +219,30 @@ public class HSEscalatorController : MonoBehaviour
             if (Time.unscaledTime >= nextPower)
             {
                 nextPower = Time.unscaledTime + PowerCheckInterval;
-                TickPower();
+                TickPower(world);
             }
             if (Time.unscaledTime >= nextObstruction)
             {
                 nextObstruction = Time.unscaledTime + ObstructionInterval;
                 TickObstruction(world);
             }
-            if (Bound.Running)
-            {
-                float dt = Time.deltaTime;
-                Bound.Phase += Bound.Direction * Bound.Speed * dt;
-                var L = Bound.ToPath();
-                float loop = L != null ? L.LoopLength : 2f;
-                if (loop < 1f) loop = 1f;
-                Bound.Phase %= loop;
-                if (Bound.Phase < 0f) Bound.Phase += loop;
-            }
+            if (Bound.Running) AdvancePhase(Time.deltaTime);
             if (Time.unscaledTime >= nextState)
             {
                 nextState = Time.unscaledTime + StateInterval;
                 HSEscalatorNet.BroadcastState(Bound);
             }
         }
+        else if (Bound.Running)
+        {
+            AdvancePhase(Time.deltaTime);
+        }
 
         belt.Apply(Bound.Phase, Time.deltaTime);
         if (Bound.Running) CarryRiders(world);
     }
 
-    void TickPower()
+    void TickPower(World world)
     {
         if (Time.unscaledTime < jogUntil) return;
         string problem;
@@ -201,8 +256,56 @@ public class HSEscalatorController : MonoBehaviour
             }
             return;
         }
+        if (!Bound.WantedOn)
+        {
+            Bound.Running = false;
+            return;
+        }
+        if (Bound.RunWhenOccupied && !SomeoneOnBelt(world))
+        {
+            Bound.Running = false;
+            return;
+        }
         if (!Bound.Running && string.IsNullOrEmpty(Bound.StopReason))
             Bound.Running = true;
+    }
+
+    public bool SomeoneOnBelt(World world)
+    {
+        if (world == null || Bound == null) return false;
+        var locals = world.GetLocalPlayers();
+        if (locals != null)
+        {
+            for (int i = 0; i < locals.Count; i++)
+            {
+                var p = locals[i] as Entity;
+                HSEscalatorSlotPose pose;
+                Vector3 delta;
+                if (p != null && belt.StepUnder(p.position, out pose, out delta)) return true;
+            }
+        }
+        riders.Clear();
+        var path = Bound.ToPath();
+        if (path == null) return false;
+        int x0, z0, x1, z1;
+        path.WorldXZ(0, 0, out x0, out z0);
+        path.WorldXZ(path.Length - 1, Math.Max(0, path.Width - 1), out x1, out z1);
+        float lo = HSEscalatorPath.TreadTop(path.Heights[0]);
+        float hi = HSEscalatorPath.TreadTop(path.Heights[path.Length - 1]);
+        var bb = new Bounds();
+        bb.SetMinMax(
+            new Vector3(Math.Min(x0, x1) - 1f, Math.Min(lo, hi) - 1.5f, Math.Min(z0, z1) - 1f),
+            new Vector3(Math.Max(x0, x1) + 2f, Math.Max(lo, hi) + 2.5f, Math.Max(z0, z1) + 2f));
+        world.GetEntitiesInBounds(typeof(Entity), bb, riders);
+        for (int i = 0; i < riders.Count; i++)
+        {
+            var e = riders[i];
+            if (e == null || e is EntityFallingBlock) continue;
+            HSEscalatorSlotPose pose;
+            Vector3 delta;
+            if (belt.StepUnder(e.position, out pose, out delta)) return true;
+        }
+        return false;
     }
 
     void TickObstruction(World world)
@@ -255,19 +358,15 @@ public class HSEscalatorController : MonoBehaviour
             HSEscalatorSlotPose pose;
             Vector3 delta;
             if (!belt.StepUnder(player.position, out pose, out delta)) continue;
-            if (path.InHinge(pose.FoldDeg))
-            {
-                if (HSEscalatorNet.IsAuthority) Stop("someone is on a folding step (the comb)");
-                continue;
-            }
             if (LeavingOntoLanding(world, path, player.position, pose))
+                continue;
+            Vector3 stand;
+            if (TrySpitOntoLanding(world, path, player.position, pose, out stand))
             {
-                string land;
-                bool low = pose.Col < path.Length * 0.5f;
-                if (HSEscalatorNet.IsAuthority && !HSEscalatorWorld.LandingWalkable(world, Bound, low, out land))
-                    Stop(land);
+                fp.SetPosition(fp.Transform.position + (stand - player.position));
                 continue;
             }
+            if (pose.FoldDeg > 12f) continue;
             if (delta.sqrMagnitude > 0.000001f)
                 fp.SetPosition(fp.Transform.position + delta);
         }
@@ -295,11 +394,15 @@ public class HSEscalatorController : MonoBehaviour
             HSEscalatorSlotPose pose;
             Vector3 delta;
             if (!belt.StepUnder(e.position, out pose, out delta)) continue;
-            if (path.InHinge(pose.FoldDeg))
+            Vector3 stand;
+            if (TrySpitOntoLanding(world, path, e.position, pose, out stand))
             {
-                if (HSEscalatorNet.IsAuthority) Stop("something is on a folding step (the comb)");
+                e.SetPosition(stand, true);
+                var landed = e as EntityVehicle;
+                if (landed != null) landed.PhysicsResetAndSleep();
                 continue;
             }
+            if (pose.FoldDeg > 12f) continue;
             if (delta.sqrMagnitude > 0.000001f)
             {
                 e.SetPosition(e.position + delta, true);
@@ -307,6 +410,22 @@ public class HSEscalatorController : MonoBehaviour
                 if (v != null) v.PhysicsResetAndSleep();
             }
         }
+    }
+
+    bool TrySpitOntoLanding(World world, HSEscalatorPath path, Vector3 feet, HSEscalatorSlotPose pose, out Vector3 stand)
+    {
+        stand = feet;
+        if (path == null || pose == null || Bound == null) return false;
+        float last = Math.Max(1, path.Length) - 1f;
+        bool towardHigh = Bound.Direction >= 0;
+        bool atHigh = pose.Col >= last - 0.7f;
+        bool atLow = pose.Col <= 0.7f;
+        bool exitHigh = towardHigh && atHigh;
+        bool exitLow = !towardHigh && atLow;
+        if (!exitHigh && !exitLow) return false;
+        if (pose.FoldDeg <= 12f && !(towardHigh ? atHigh && pose.Col >= last - 0.35f : atLow && pose.Col <= 0.35f))
+            return false;
+        return HSEscalatorWorld.TryLandingStand(world, path, exitLow, feet, out stand);
     }
 
     bool LeavingOntoLanding(World world, HSEscalatorPath path, Vector3 feet, HSEscalatorSlotPose pose)

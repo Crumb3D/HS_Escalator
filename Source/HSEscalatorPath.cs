@@ -18,9 +18,9 @@ public class HSEscalatorPath
     public int LowFlat;
     public int HighFlat;
 
-    public int SlotCount { get { return 2 * Math.Max(2, Length - 1); } }
+    public int SlotCount { get { return 2 * Math.Max(2, Length); } }
 
-    public float LoopLength { get { return 2f * Math.Max(1, Length - 1); } }
+    public float LoopLength { get { return 2f * Math.Max(2, Length); } }
 
     public static string SelfTest()
     {
@@ -34,6 +34,15 @@ public class HSEscalatorPath
         Expect(new[] { 10, 10, 11, 11, 11 }, true, false, 1, "riseHalf", fails);
         Expect(new[] { 10, 10, 10, 11, 12, 13, 14, 14, 14 }, true, false, 4, "extraFlats", fails);
         Expect(new[] { 20, 20, 19, 18, 17, 16, 16, 16 }, true, false, 4, "downhill", fails);
+        var belt = TryFromHeights(new[] { 10, 10, 11, 12, 13, 14, 14, 14 }, out _);
+        if (belt == null) fails.Add("beltHeights rejected");
+        else
+        {
+            if (Math.Abs(belt.BeltHeight(0f) - 10f) > 0.01f) fails.Add("belt low comb");
+            if (Math.Abs(belt.BeltHeight(1f) - 11f) > 0.01f) fails.Add("belt 2nd flat should be a stair");
+            if (Math.Abs(belt.BeltHeight(4f) - 14f) > 0.01f) fails.Add("belt meets high");
+            if (Math.Abs(belt.BeltHeight(7f) - 14f) > 0.01f) fails.Add("belt high comb");
+        }
         if (fails.Count == 0) return "path tests ok";
         return "path tests failed: " + string.Join("; ", fails.ToArray());
     }
@@ -188,34 +197,82 @@ public class HSEscalatorPath
         return Heights[c0] + (Heights[c0 + 1] - Heights[c0]) * f;
     }
 
-    // s is loop parameter in [0, LoopLength). foldDeg 0 = tread up, 180 = return (tread down).
-    public void SlotPose(float s, out float col, out float treadTop, out float foldDeg, out bool onReturn)
+    // Built landings stay flat in the world so we can read the rise. Once the belt
+    // runs, only the first and last column stay a comb — the extra end flats
+    // become stairs (one half-step per column) so the treads stay packed.
+    public float BeltHeight(float col)
     {
-        float L = LoopLength;
-        if (L < 2f) L = 2f;
-        s = Wrap(s, L);
-        float topEnd = Length - 1f;
-        const float hinge = 0.4f;
-
-        if (s < topEnd)
+        if (Heights == null || Heights.Length == 0) return 0f;
+        if (IsWalkway) return Heights[0];
+        float start = Heights[0];
+        float end = Heights[Length - 1];
+        if (col <= 0f) return start;
+        if (col >= Length - 1) return end;
+        float risen = start + (end >= start ? col : -col);
+        if (end >= start)
         {
-            col = s;
-            onReturn = false;
-            foldDeg = 0f;
-            if (s > topEnd - hinge)
-                foldDeg = 180f * ((s - (topEnd - hinge)) / hinge);
+            if (risen > end) return end;
+            if (risen < start) return start;
         }
         else
         {
-            col = L - s;
-            onReturn = true;
-            foldDeg = 180f;
-            if (s > L - hinge)
-                foldDeg = 180f - 180f * ((s - (L - hinge)) / hinge);
+            if (risen < end) return end;
+            if (risen > start) return start;
+        }
+        return risen;
+    }
+
+    public int PrototypeCol()
+    {
+        if (Heights == null || Heights.Length == 0 || IsWalkway) return 0;
+        for (int c = 0; c < Heights.Length; c++)
+            if (Heights[c] != Heights[0]) return c;
+        return 0;
+    }
+
+    // s is loop parameter in [0, 2H). One step per column on top and on the return, so the treads stay packed.
+    public void SlotPose(float s, out float col, out float treadTop, out float foldDeg, out float foldSpin, out bool onReturn)
+    {
+        int H = Math.Max(2, Length);
+        float last = H - 1f;
+        s = Wrap(s, 2f * H);
+        foldSpin = 0f;
+
+        if (s < H)
+        {
+            if (s < last)
+            {
+                col = s;
+                foldSpin = 0f;
+                onReturn = false;
+            }
+            else
+            {
+                col = last;
+                foldSpin = 180f * (s - last);
+                onReturn = foldSpin >= 90f;
+            }
+        }
+        else
+        {
+            float u = s - H;
+            if (u <= last)
+            {
+                col = last - u;
+                foldSpin = 180f;
+                onReturn = true;
+            }
+            else
+            {
+                col = 0f;
+                foldSpin = 180f + 180f * (u - last);
+                onReturn = foldSpin <= 270f;
+            }
         }
         if (col < 0f) col = 0f;
-        if (col > Length - 1) col = Length - 1;
-        float top = HeightAt(col) * 0.5f;
+        if (col > last) col = last;
+        foldDeg = foldSpin <= 180f ? foldSpin : 360f - foldSpin;
+        float top = BeltHeight(col) * 0.5f;
         if (foldDeg <= 0.5f)
         {
             treadTop = top;
@@ -242,9 +299,14 @@ public class HSEscalatorPath
 
     public void OutsideLanding(bool lowEnd, out int x, out int z)
     {
+        OutsideLanding(lowEnd, 0, out x, out z);
+    }
+
+    public void OutsideLanding(bool lowEnd, int lane, out int x, out int z)
+    {
         int col = lowEnd ? 0 : Length - 1;
         int stepX, stepZ;
-        WorldXZ(col, 0, out stepX, out stepZ);
+        WorldXZ(col, lane, out stepX, out stepZ);
         int back = lowEnd ? -RunSign : RunSign;
         if (RunAxis == 0)
         {

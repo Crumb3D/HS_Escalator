@@ -65,6 +65,10 @@
       <HintPath>$(GameDir)\7DaysToDie_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.ImageConversionModule">
+      <HintPath>$(GameDir)\7DaysToDie_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="HSEscalatorMod.cs" />
@@ -73,6 +77,7 @@
     <Compile Include="HSEscalatorPath.cs" />
     <Compile Include="HSEscalatorWorld.cs" />
     <Compile Include="HSEscalatorBelt.cs" />
+    <Compile Include="HSEscalatorPaint.cs" />
     <Compile Include="HSEscalatorController.cs" />
     <Compile Include="HSEscalatorSetup.cs" />
     <Compile Include="ItemActionHSEscalatorTool.cs" />

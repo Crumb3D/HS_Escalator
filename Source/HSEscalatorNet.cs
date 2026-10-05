@@ -100,6 +100,16 @@ public static class HSEscalatorNet
         return null;
     }
 
+    public static void SendReverse(Vector3i pos)
+    {
+        SendDriveCmd(pos, "reverse");
+    }
+
+    public static void SendDriveCmd(Vector3i pos, string cmd)
+    {
+        ToServer(Pkg().SetupCmd(Reverse, cmd ?? "", "", "", 0, 0f, false, true, pos));
+    }
+
     public static void BroadcastConfig()
     {
         if (!IsAuthority) return;
@@ -267,7 +277,7 @@ public class NetPackageHSEscalator : NetPackage
                     break;
                 case HSEscalatorNet.Reverse:
                     if (!HSEscalatorNet.IsAuthority) return;
-                    HSEscalatorNet.ReplyTip(Sender, HSEscalatorController.ReverseDrive(pos));
+                    HSEscalatorNet.ReplyTip(Sender, HSEscalatorController.DriveCommand(pos, string.IsNullOrEmpty(text) ? "reverse" : text));
                     break;
             }
         }

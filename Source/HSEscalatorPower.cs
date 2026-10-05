@@ -6,7 +6,7 @@ public static class HSEscalatorPower
     {
         if (d == null || !d.HasDrive)
         {
-            problem = "needs an Escalator Drive registered beside an end";
+            problem = "needs an Escalator Panel registered beside an end";
             return false;
         }
         try
@@ -20,7 +20,7 @@ public static class HSEscalatorPower
             var pos = d.DrivePos;
             if (!(world.GetBlock(pos).Block is BlockHSEscalatorDrive))
             {
-                problem = "drive at " + pos + " is missing (re-register it)";
+                problem = "panel at " + pos + " is missing (re-register it)";
                 return false;
             }
             var te = world.GetTileEntity(pos) as TileEntityPowered;
@@ -38,7 +38,7 @@ public static class HSEscalatorPower
                     return true;
                 }
             }
-            problem = "no power: wire a generator or battery bank to this Escalator Drive";
+            problem = "no power: wire a generator or battery bank to this Escalator Panel";
             return false;
         }
         catch (Exception e)

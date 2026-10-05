@@ -153,9 +153,9 @@ public static class HSEscalatorSetup
         }
         var ctrl = HSEscalatorController.Ensure(d);
         if (ctrl != null) ctrl.RebuildBelt();
-        var kind = d.IsWalkway ? "moving walkway" : ("escalator, rise " + d.RiseHalf + " half-steps");
+        HSEscalatorConfig.Save();
         return (d.IsWalkway ? "Walkway " : "Escalator ") + d.Length + "x" + d.Width
-            + (d.HasDrive ? " ready." : ". Register the Drive.");
+            + (d.HasDrive ? " ready." : ". Register the Panel.");
     }
 
     static string RegisterDrive(string arg, EntityPlayerLocal player)
@@ -165,7 +165,7 @@ public static class HSEscalatorSetup
         {
             d.HasDrive = false;
             HSEscalatorConfig.Save();
-            return "Drive forgotten.";
+            return "Panel forgotten.";
         }
         Vector3i p;
         var err = AimedBlock(player, out p);
@@ -176,9 +176,9 @@ public static class HSEscalatorSetup
         var bv = world.GetBlock(p);
         p = BlockHSEscalatorDrive.ParentPos(p, bv);
         if (!(world.GetBlock(p).Block is BlockHSEscalatorDrive))
-            return "Aim at an Escalator Drive. That block is " + HSEscalatorWorld.DisplayName(bv) + ".";
+            return "Aim at an Escalator Panel. That block is " + HSEscalatorWorld.DisplayName(bv) + ".";
         if (d.HasDeck && d.InDeckXZ(p.x, p.z))
-            return "The drive sits on a step. Place it beside an end, not on the deck.";
+            return "The panel sits on a step. Place it beside an end, not on the deck.";
         d.DriveX = p.x;
         d.DriveY = p.y;
         d.DriveZ = p.z;
@@ -187,7 +187,7 @@ public static class HSEscalatorSetup
         HSEscalatorConfig.Save();
         string power;
         bool on = HSEscalatorPower.IsDrivePowered(d, out power);
-        return "Drive registered at " + p + ". " + (on ? "Powered — it will run." : power);
+        return "Panel registered at " + p + ". " + (on ? "Powered — it will run." : power);
     }
 
     static string Forget(HSEscalatorConfigData d)
