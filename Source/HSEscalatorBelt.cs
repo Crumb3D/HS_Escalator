@@ -120,7 +120,8 @@ public class HSEscalatorBelt
         }
     }
 
-    const float CombThick = 0.05f;
+    const float CombThick = 0.005f;
+    const float CombSolidDepth = 0.12f;
 
     // A fixed plate over the first and last column: riders step on and off it while the
     // treads fold underneath, so the hinge never leaves a hole to fall into.
@@ -137,18 +138,30 @@ public class HSEscalatorBelt
             float top = HSEscalatorPath.TreadTop(path.Heights[c]);
             var world = new Vector3(
                 (Math.Min(x0, x1) + Math.Max(x0, x1) + 1) * 0.5f,
-                top + CombThick * 0.5f,
+                top,
                 (Math.Min(z0, z1) + Math.Max(z0, z1) + 1) * 0.5f);
-            var size = path.RunAxis == 0
-                ? new Vector3(1f, CombThick, lanes)
-                : new Vector3(lanes, CombThick, 1f);
+            float alongX = path.RunAxis == 0 ? 1f : lanes;
+            float alongZ = path.RunAxis == 0 ? lanes : 1f;
 
-            var plate = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            plate.name = c == 0 ? "comb_low" : "comb_high";
-            plate.layer = 16;
+            // Root sits on the half-block's top face: a paper-thin sheet above it, and
+            // a deeper collider hanging below it so nothing slips through while steps fold.
+            var plate = new GameObject(c == 0 ? "comb_low" : "comb_high");
             plate.transform.SetParent(Root.transform, false);
-            plate.transform.localScale = size;
-            var r = plate.GetComponent<MeshRenderer>();
+
+            var solid = new GameObject("solid");
+            solid.layer = 16;
+            solid.transform.SetParent(plate.transform, false);
+            var box = solid.AddComponent<BoxCollider>();
+            box.size = new Vector3(alongX, CombSolidDepth + CombThick, alongZ);
+            box.center = new Vector3(0f, (CombThick - CombSolidDepth) * 0.5f, 0f);
+
+            var sheet = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            sheet.name = "sheet";
+            UnityEngine.Object.Destroy(sheet.GetComponent<Collider>());
+            sheet.transform.SetParent(plate.transform, false);
+            sheet.transform.localPosition = new Vector3(0f, CombThick * 0.5f, 0f);
+            sheet.transform.localScale = new Vector3(alongX, CombThick, alongZ);
+            var r = sheet.GetComponent<MeshRenderer>();
             var grate = pin != null ? HSEscalatorPaint.GrateMaterial() : null;
             if (r != null && grate != null)
             {
