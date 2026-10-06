@@ -150,8 +150,6 @@ public static class HSEscalatorWorld
 
         int spanX = Math.Abs(dx) + 1;
         int spanZ = Math.Abs(dz) + 1;
-        int minY = Math.Min(y1, y2);
-        int maxY = Math.Max(y1, y2);
 
         // Sample a few columns to see which axis the height changes along.
         int runAxis;
@@ -159,8 +157,8 @@ public static class HSEscalatorWorld
         else if (spanZ == 1) runAxis = 0;
         else
         {
-            int changeX = HeightChangeAlong(world, x1, x2, z1, minY, maxY, 0);
-            int changeZ = HeightChangeAlong(world, z1, z2, x1, minY, maxY, 2);
+            int changeX = HeightChangeAlong(world, x1, x2, z1, y1, 0);
+            int changeZ = HeightChangeAlong(world, z1, z2, x1, y1, 2);
             if (changeX > 0 && changeZ == 0) runAxis = 0;
             else if (changeZ > 0 && changeX == 0) runAxis = 2;
             else runAxis = spanX >= spanZ ? 0 : 2;
@@ -204,6 +202,11 @@ public static class HSEscalatorWorld
             LaneMinZ = laneMinZ
         };
 
+        HSEscalatorHalf seedHalf;
+        int hint = int.MinValue;
+        if (TryReadHalf(world, new Vector3i(x1, y1, z1), out seedHalf)) hint = seedHalf.Height;
+        else if (TryReadHalf(world, new Vector3i(x2, y2, z2), out seedHalf)) hint = seedHalf.Height;
+
         var heights = new int[length];
         var found = new HSEscalatorHalf[length, width];
         for (int c = 0; c < length; c++)
@@ -214,7 +217,7 @@ public static class HSEscalatorWorld
                 int x, z;
                 probe.WorldXZ(c, w, out x, out z);
                 HSEscalatorHalf half;
-                string why = FindStep(world, x, z, minY, maxY, out half);
+                string why = FindTread(world, x, z, hint, out half);
                 if (why != null) return why;
                 if (colHeight == int.MinValue) colHeight = half.Height;
                 else if (half.Height != colHeight)
@@ -222,6 +225,7 @@ public static class HSEscalatorWorld
                 found[c, w] = half;
             }
             heights[c] = colHeight;
+            hint = colHeight;
         }
 
         string layoutErr;
@@ -256,53 +260,69 @@ public static class HSEscalatorWorld
         return null;
     }
 
-    static int HeightChangeAlong(World world, int a1, int a2, int other, int minY, int maxY, int axis)
+    static int HeightChangeAlong(World world, int a1, int a2, int other, int seedY, int axis)
     {
         int seen = int.MinValue;
         int changes = 0;
+        int hint = int.MinValue;
         int step = a2 >= a1 ? 1 : -1;
+        bool first = true;
         for (int a = a1; a != a2 + step; a += step)
         {
             int x = axis == 0 ? a : other;
             int z = axis == 0 ? other : a;
+            if (first)
+            {
+                first = false;
+                HSEscalatorHalf seed;
+                if (TryReadHalf(world, new Vector3i(x, seedY, z), out seed))
+                    hint = seed.Height;
+            }
             HSEscalatorHalf half;
-            if (FindStep(world, x, z, minY, maxY, out half) != null) continue;
+            if (FindTread(world, x, z, hint, out half) != null) continue;
             if (seen != int.MinValue && half.Height != seen) changes++;
             seen = half.Height;
+            hint = half.Height;
         }
         return changes;
     }
 
-    static string FindStep(World world, int x, int z, int minY, int maxY, out HSEscalatorHalf half)
+    // The step is the half-block that continues the stair. Other half-blocks in the column
+    // (a floor, a pillar) are the player's supports and are not part of the belt.
+    // The cell directly under the step still has to be empty so the belt can fold back.
+    static string FindTread(World world, int x, int z, int hintHeight, out HSEscalatorHalf half)
     {
         half = null;
-        HSEscalatorHalf extra = null;
-        int lo = minY - 1, hi = maxY + 1;
-        for (int y = lo; y <= hi; y++)
+        if (hintHeight == int.MinValue)
+            return "No half-block step at " + x + " " + z + ".";
+        int mid = HSEscalatorPath.BlockYFromHeight(hintHeight);
+        var matches = new List<HSEscalatorHalf>();
+        for (int y = mid - 2; y <= mid + 2; y++)
         {
             var pos = new Vector3i(x, y, z);
             if (world.GetChunkFromWorldPos(pos) == null)
                 return "Chunk not loaded at " + pos + ".";
             HSEscalatorHalf found;
-            if (!TryReadHalf(world, pos, out found))
-            {
-                var bv = world.GetBlock(pos);
-                if (!bv.isair && bv.Block != null && !bv.ischild && y >= minY && y <= maxY && bv.Block.IsCollideMovement)
-                {
-                    bool terrain = false;
-                    try { terrain = bv.Block.shape != null && bv.Block.shape.IsTerrain(); } catch { }
-                    if (!terrain)
-                        return DisplayName(bv) + " at " + pos + " is not a half-block.";
-                }
-                continue;
-            }
-            if (half == null) half = found;
-            else extra = found;
+            if (!TryReadHalf(world, pos, out found)) continue;
+            if (Math.Abs(found.Height - hintHeight) <= 1)
+                matches.Add(found);
         }
-        if (half == null)
-            return "No half-block at " + x + " " + z + ".";
-        if (extra != null)
-            return "Two half-blocks at " + x + " " + z + ". Only the step.";
+        if (matches.Count == 0)
+        {
+            var pos = new Vector3i(x, mid, z);
+            var bv = world.GetBlock(pos);
+            if (!bv.isair && bv.Block != null && !bv.ischild && bv.Block.IsCollideMovement)
+            {
+                bool terrain = false;
+                try { terrain = bv.Block.shape != null && bv.Block.shape.IsTerrain(); } catch { }
+                if (!terrain)
+                    return DisplayName(bv) + " at " + pos + " is not a half-block.";
+            }
+            return "No half-block step at " + x + " " + z + ".";
+        }
+        if (matches.Count > 1)
+            return "Two half-blocks at " + x + " " + z + ", y=" + matches[0].Pos.y + " and y=" + matches[1].Pos.y + ".";
+        half = matches[0];
         return null;
     }
 
