@@ -2,6 +2,8 @@ using System;
 
 public static class HSEscalatorPower
 {
+    public const string ChunksNotReady = "chunks not loaded";
+
     public static bool IsDrivePowered(HSEscalatorConfigData d, out string problem)
     {
         if (d == null || d.DriveCount < 1)
@@ -19,13 +21,19 @@ public static class HSEscalatorPower
             }
             int missing = 0;
             int unpowered = 0;
+            int unseen = 0;
             int ok = 0;
-            if (d.HasDrive) CheckOne(world, d.DrivePos, ref missing, ref unpowered, ref ok);
-            if (d.HasDrive2) CheckOne(world, d.Drive2Pos, ref missing, ref unpowered, ref ok);
+            if (d.HasDrive) CheckOne(world, d.DrivePos, ref missing, ref unpowered, ref unseen, ref ok);
+            if (d.HasDrive2) CheckOne(world, d.Drive2Pos, ref missing, ref unpowered, ref unseen, ref ok);
             if (ok > 0)
             {
                 problem = null;
                 return true;
+            }
+            if (unseen > 0)
+            {
+                problem = ChunksNotReady;
+                return false;
             }
             if (unpowered > 0)
             {
@@ -43,9 +51,26 @@ public static class HSEscalatorPower
         }
     }
 
-    static void CheckOne(World world, Vector3i pos, ref int missing, ref int unpowered, ref int ok)
+    static void CheckOne(World world, Vector3i pos, ref int missing, ref int unpowered, ref int unseen, ref int ok)
     {
-        if (!(world.GetBlock(pos).Block is BlockHSEscalatorDrive))
+        if (world.GetChunkFromWorldPos(pos) == null)
+        {
+            unseen++;
+            return;
+        }
+        var bv = world.GetBlock(pos);
+        var parent = BlockHSEscalatorDrive.ParentPos(pos, bv);
+        if (parent != pos)
+        {
+            if (world.GetChunkFromWorldPos(parent) == null)
+            {
+                unseen++;
+                return;
+            }
+            pos = parent;
+            bv = world.GetBlock(pos);
+        }
+        if (!(bv.Block is BlockHSEscalatorDrive))
         {
             missing++;
             return;

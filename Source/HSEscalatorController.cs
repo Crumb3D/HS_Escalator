@@ -248,15 +248,18 @@ public class HSEscalatorController : MonoBehaviour
         if (Time.unscaledTime < jogUntil) return;
         string problem;
         bool powered = HSEscalatorPower.IsDrivePowered(Bound, out problem);
+        if (problem == HSEscalatorPower.ChunksNotReady) return;
         if (!powered)
         {
-            if (Bound.Running)
+            if (Bound.Running || IsPowerStop(Bound.StopReason))
             {
                 Bound.Running = false;
                 Bound.StopReason = problem;
             }
             return;
         }
+        if (IsPowerStop(Bound.StopReason))
+            Bound.StopReason = null;
         if (!Bound.WantedOn)
         {
             Bound.Running = false;
@@ -269,6 +272,13 @@ public class HSEscalatorController : MonoBehaviour
         }
         if (!Bound.Running && string.IsNullOrEmpty(Bound.StopReason))
             Bound.Running = true;
+    }
+
+    static bool IsPowerStop(string reason)
+    {
+        if (string.IsNullOrEmpty(reason)) return false;
+        return reason.IndexOf("panel", StringComparison.OrdinalIgnoreCase) >= 0
+            || reason.IndexOf("power", StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
     public bool SomeoneOnBelt(World world)
