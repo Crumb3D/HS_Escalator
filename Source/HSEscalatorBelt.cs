@@ -21,6 +21,8 @@ public class HSEscalatorBelt
     readonly List<Vector3> lastDelta = new List<Vector3>();
     readonly List<Transform> combs = new List<Transform>();
     readonly List<Vector3> combWorld = new List<Vector3>();
+    readonly List<Transform> walkFloors = new List<Transform>();
+    readonly List<Vector3> walkWorld = new List<Vector3>();
     HSEscalatorConfigData bound;
     HSEscalatorPath path;
 
@@ -43,7 +45,9 @@ public class HSEscalatorBelt
             erb.isKinematic = true;
             erb.useGravity = false;
             BuildCombPlates(null);
+            BuildWalkFloor();
             Apply(bound.Phase, 0f);
+            RefreshPathGraph();
             return;
         }
         Root = new GameObject("HSEscalator_" + bound.EscalatorId);
@@ -66,7 +70,9 @@ public class HSEscalatorBelt
             lastDelta.Add(Vector3.zero);
         }
         BuildCombPlates(pin);
+        BuildWalkFloor();
         Apply(bound.Phase, 0f);
+        RefreshPathGraph();
         HSEscalatorDebug.Verbose("Belt " + bound.EscalatorId + ": " + n + " slots from " + bound.Steps.Count + " cells");
     }
 
@@ -177,6 +183,50 @@ public class HSEscalatorBelt
         }
     }
 
+    const float WalkThick = 0.2f;
+
+    // A fixed floor on every column, including the dedicated server. Zombie pathing
+    // raycasts layers 16 and 30; the moving steps are not built on a dedicated server,
+    // and a moving collider is not there when the path grid scans.
+    void BuildWalkFloor()
+    {
+        int lanes = Math.Max(1, path.Width);
+        for (int c = 0; c < path.Length; c++)
+        {
+            int x0, z0, x1, z1;
+            path.WorldXZ(c, 0, out x0, out z0);
+            path.WorldXZ(c, lanes - 1, out x1, out z1);
+            float top = path.BeltHeight(c) * 0.5f;
+            var world = new Vector3(
+                (Math.Min(x0, x1) + Math.Max(x0, x1) + 1) * 0.5f,
+                top - 0.02f - WalkThick * 0.5f,
+                (Math.Min(z0, z1) + Math.Max(z0, z1) + 1) * 0.5f);
+            float alongX = path.RunAxis == 0 ? 1f : lanes;
+            float alongZ = path.RunAxis == 0 ? lanes : 1f;
+            var go = new GameObject("walk" + c);
+            go.layer = 16;
+            go.transform.SetParent(Root.transform, false);
+            var box = go.AddComponent<BoxCollider>();
+            box.size = new Vector3(alongX, WalkThick, alongZ);
+            walkFloors.Add(go.transform);
+            walkWorld.Add(world);
+        }
+    }
+
+    void RefreshPathGraph()
+    {
+        var astar = AstarManager.Instance;
+        if (astar == null || path == null) return;
+        int lanes = Math.Max(1, path.Width);
+        for (int c = 0; c < path.Length; c++)
+        for (int w = 0; w < lanes; w++)
+        {
+            int x, z;
+            path.WorldXZ(c, w, out x, out z);
+            astar.UpdateBlock(new Vector3i(x, 0, z), false);
+        }
+    }
+
     public static bool OnCombPlate(HSEscalatorPath path, Vector3 feet)
     {
         if (path == null) return false;
@@ -207,6 +257,8 @@ public class HSEscalatorBelt
         if (Root == null && slots.Count == 0) return;
         for (int i = 0; i < combs.Count && i < combWorld.Count; i++)
             if (combs[i] != null) combs[i].position = combWorld[i] - Origin.position;
+        for (int i = 0; i < walkFloors.Count && i < walkWorld.Count; i++)
+            if (walkFloors[i] != null) walkFloors[i].position = walkWorld[i] - Origin.position;
         int n = path.SlotCount;
         for (int i = 0; i < slots.Count && i < n; i++)
         {
@@ -317,6 +369,14 @@ public class HSEscalatorBelt
         lastDelta.Clear();
         combs.Clear();
         combWorld.Clear();
+        for (int i = 0; i < walkFloors.Count; i++)
+        {
+            var col = walkFloors[i] != null ? walkFloors[i].GetComponent<Collider>() : null;
+            if (col != null) col.enabled = false;
+        }
+        RefreshPathGraph();
+        walkFloors.Clear();
+        walkWorld.Clear();
         if (Root != null) UnityEngine.Object.Destroy(Root);
         Root = null;
     }
