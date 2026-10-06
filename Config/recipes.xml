@@ -13,5 +13,58 @@
 			<ingredient name="resourceElectricParts" count="2"/>
 		</recipe>
 
+		<recipe name="hsescalatorEndL" count="1" craft_area="workbench" tags="perkAdvancedEngineering,learnable">
+			<ingredient name="resourceForgedIron" count="6"/>
+			<ingredient name="resourceBrokenGlass" count="4"/>
+			<ingredient name="resourceMechanicalParts" count="1"/>
+		</recipe>
+		<recipe name="hsescalatorEndR" count="1" craft_area="workbench" tags="perkAdvancedEngineering,learnable">
+			<ingredient name="resourceForgedIron" count="6"/>
+			<ingredient name="resourceBrokenGlass" count="4"/>
+			<ingredient name="resourceMechanicalParts" count="1"/>
+		</recipe>
+		<recipe name="hsescalatorEndLUpper" count="1" craft_area="workbench" tags="perkAdvancedEngineering,learnable">
+			<ingredient name="resourceForgedIron" count="6"/>
+			<ingredient name="resourceBrokenGlass" count="4"/>
+			<ingredient name="resourceMechanicalParts" count="1"/>
+		</recipe>
+		<recipe name="hsescalatorEndRUpper" count="1" craft_area="workbench" tags="perkAdvancedEngineering,learnable">
+			<ingredient name="resourceForgedIron" count="6"/>
+			<ingredient name="resourceBrokenGlass" count="4"/>
+			<ingredient name="resourceMechanicalParts" count="1"/>
+		</recipe>
+		<recipe name="hsescalatorSlopeL" count="1" craft_area="workbench" tags="perkAdvancedEngineering,learnable">
+			<ingredient name="resourceForgedIron" count="4"/>
+			<ingredient name="resourceBrokenGlass" count="4"/>
+		</recipe>
+		<recipe name="hsescalatorSlopeR" count="1" craft_area="workbench" tags="perkAdvancedEngineering,learnable">
+			<ingredient name="resourceForgedIron" count="4"/>
+			<ingredient name="resourceBrokenGlass" count="4"/>
+		</recipe>
+		<recipe name="hsescalatorSlopeLUpper" count="1" craft_area="workbench" tags="perkAdvancedEngineering,learnable">
+			<ingredient name="resourceForgedIron" count="4"/>
+			<ingredient name="resourceBrokenGlass" count="4"/>
+		</recipe>
+		<recipe name="hsescalatorSlopeRUpper" count="1" craft_area="workbench" tags="perkAdvancedEngineering,learnable">
+			<ingredient name="resourceForgedIron" count="4"/>
+			<ingredient name="resourceBrokenGlass" count="4"/>
+		</recipe>
+		<recipe name="hsescalatorFlatL" count="1" craft_area="workbench" tags="perkAdvancedEngineering,learnable">
+			<ingredient name="resourceForgedIron" count="4"/>
+			<ingredient name="resourceBrokenGlass" count="4"/>
+		</recipe>
+		<recipe name="hsescalatorFlatR" count="1" craft_area="workbench" tags="perkAdvancedEngineering,learnable">
+			<ingredient name="resourceForgedIron" count="4"/>
+			<ingredient name="resourceBrokenGlass" count="4"/>
+		</recipe>
+		<recipe name="hsescalatorFlatLUpper" count="1" craft_area="workbench" tags="perkAdvancedEngineering,learnable">
+			<ingredient name="resourceForgedIron" count="4"/>
+			<ingredient name="resourceBrokenGlass" count="4"/>
+		</recipe>
+		<recipe name="hsescalatorFlatRUpper" count="1" craft_area="workbench" tags="perkAdvancedEngineering,learnable">
+			<ingredient name="resourceForgedIron" count="4"/>
+			<ingredient name="resourceBrokenGlass" count="4"/>
+		</recipe>
+
 	</append>
 </configs>

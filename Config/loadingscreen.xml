@@ -5,5 +5,6 @@
 		<tip key="loadingTipHSEscalatorPanel" />
 		<tip key="loadingTipHSEscalatorPower" />
 		<tip key="loadingTipHSEscalatorRide" />
+		<tip key="loadingTipHSEscalatorRail" />
 	</append>
 </configs>

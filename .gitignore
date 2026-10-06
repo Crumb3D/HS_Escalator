@@ -14,3 +14,14 @@ Source/bin/
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+_unity/Library/
+_unity/Logs/
+_unity/Temp/
+_unity/obj/
+_unity/UserSettings/
+_unity/BundleOut/
+_unity/*.csproj
+_unity/*.sln
+_unity_build.log
+_unity/build_report.txt

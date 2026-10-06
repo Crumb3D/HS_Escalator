@@ -17,6 +17,7 @@ public class HSEscalatorController : MonoBehaviour
     float nextPower;
     float nextObstruction;
     float nextState;
+    float nextRail;
     float jogUntil;
     bool beltReady;
 
@@ -236,6 +237,12 @@ public class HSEscalatorController : MonoBehaviour
         else if (Bound.Running)
         {
             AdvancePhase(Time.deltaTime);
+        }
+
+        if (!GameManager.IsDedicatedServer && belt.IsBuilt && Time.unscaledTime >= nextRail)
+        {
+            nextRail = Time.unscaledTime + 1f;
+            belt.RefreshRails(world);
         }
 
         belt.Apply(Bound.Phase, Time.deltaTime);

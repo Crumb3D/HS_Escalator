@@ -23,8 +23,10 @@ public class HSEscalatorBelt
     readonly List<Vector3> combWorld = new List<Vector3>();
     readonly List<Transform> walkFloors = new List<Transform>();
     readonly List<Vector3> walkWorld = new List<Vector3>();
+    readonly HSEscalatorRail rails = new HSEscalatorRail();
     HSEscalatorConfigData bound;
     HSEscalatorPath path;
+    int railSig = int.MinValue;
 
     public void Bind(HSEscalatorConfigData d)
     {
@@ -33,6 +35,16 @@ public class HSEscalatorBelt
     }
 
     public bool IsBuilt { get { return Root != null; } }
+
+    public void RefreshRails(World world)
+    {
+        if (GameManager.IsDedicatedServer || Root == null || path == null) return;
+        int sig = HSEscalatorRail.LayoutSig(world, path);
+        if (sig == railSig) return;
+        rails.Build(world, path, Root.transform);
+        rails.Apply(bound != null ? bound.Phase : 0f);
+        railSig = sig;
+    }
 
     public void Rebuild(World world)
     {
@@ -71,6 +83,8 @@ public class HSEscalatorBelt
         }
         BuildCombPlates(pin);
         BuildWalkFloor();
+        rails.Build(world, path, Root.transform);
+        railSig = HSEscalatorRail.LayoutSig(world, path);
         Apply(bound.Phase, 0f);
         RefreshPathGraph();
         HSEscalatorDebug.Verbose("Belt " + bound.EscalatorId + ": " + n + " slots from " + bound.Steps.Count + " cells");
@@ -259,6 +273,7 @@ public class HSEscalatorBelt
             if (combs[i] != null) combs[i].position = combWorld[i] - Origin.position;
         for (int i = 0; i < walkFloors.Count && i < walkWorld.Count; i++)
             if (walkFloors[i] != null) walkFloors[i].position = walkWorld[i] - Origin.position;
+        rails.Apply(phase);
         int n = path.SlotCount;
         for (int i = 0; i < slots.Count && i < n; i++)
         {
@@ -377,6 +392,8 @@ public class HSEscalatorBelt
         RefreshPathGraph();
         walkFloors.Clear();
         walkWorld.Clear();
+        rails.Clear();
+        railSig = int.MinValue;
         if (Root != null) UnityEngine.Object.Destroy(Root);
         Root = null;
     }

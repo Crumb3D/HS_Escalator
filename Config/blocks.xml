@@ -36,5 +36,119 @@
 			<property name="FilterTags" value="MC_playerBlocks,SC_electrical" />
 		</block>
 
+		<block name="hsescalatorSideMaster">
+			<property name="CreativeMode" value="None" />
+			<property name="Material" value="Mmetal_weak" />
+			<property name="Shape" value="ModelEntity" />
+			<property name="Model" value="#@modfolder:Resources/HSEscalator.unity3d?HSSideFlatR" />
+			<property name="MultiBlockDim" value="1,2,1" />
+			<property name="ImposterDontBlock" value="true" />
+			<property name="WaterFlow" value="permitted" />
+			<property name="Place" value="TowardsPlacer" />
+			<property name="Collide" value="movement,melee,bullet,arrow,rocket" />
+			<property name="Path" value="solid" />
+			<property name="CanPickup" value="true" />
+			<property name="EconomicValue" value="40" />
+			<property name="MaxDamage" value="1200" />
+			<property name="UnlockedBy" value="craftingElectrician" />
+			<property class="RepairItems">
+				<property name="resourceForgedIron" value="2" />
+			</property>
+			<drop event="Harvest" name="terrStone" count="0" tool_category="Disassemble" />
+			<drop event="Destroy" name="resourceScrapIron" count="2,4" />
+			<drop event="Fall" name="scrapMetalPile" count="1" prob="0.5" stick_chance="1" />
+			<property name="SortOrder1" value="B156" />
+			<property name="Group" value="Building,Science,TCBuilding" />
+			<property name="Tags" value="electricianSkill" />
+			<property name="FilterTags" value="MC_playerBlocks,SC_building" />
+		</block>
+
+		<block name="hsescalatorEndL">
+			<property name="Extends" value="hsescalatorSideMaster" />
+			<property name="CreativeMode" value="Player" />
+			<property name="CustomIcon" value="hsescalatorEndL" />
+			<property name="DescriptionKey" value="hsescalatorEndDesc" />
+			<property name="Model" value="#@modfolder:Resources/HSEscalator.unity3d?HSSideEndL" />
+			<property name="SortOrder2" value="0110" />
+		</block>
+		<block name="hsescalatorEndR">
+			<property name="Extends" value="hsescalatorEndL" />
+			<property name="CustomIcon" value="hsescalatorEndR" />
+			<property name="Model" value="#@modfolder:Resources/HSEscalator.unity3d?HSSideEndR" />
+			<property name="SortOrder2" value="0111" />
+		</block>
+		<block name="hsescalatorEndLUpper">
+			<property name="Extends" value="hsescalatorEndL" />
+			<property name="CustomIconTint" value="ffd27a" />
+			<property name="DescriptionKey" value="hsescalatorEndUpperDesc" />
+			<property name="ModelOffset" value="0,0.5,0" />
+			<property name="SortOrder2" value="0112" />
+		</block>
+		<block name="hsescalatorEndRUpper">
+			<property name="Extends" value="hsescalatorEndR" />
+			<property name="CustomIconTint" value="ffd27a" />
+			<property name="DescriptionKey" value="hsescalatorEndUpperDesc" />
+			<property name="ModelOffset" value="0,0.5,0" />
+			<property name="SortOrder2" value="0113" />
+		</block>
+
+		<block name="hsescalatorSlopeL">
+			<property name="Extends" value="hsescalatorSideMaster" />
+			<property name="CreativeMode" value="Player" />
+			<property name="CustomIcon" value="hsescalatorSlopeL" />
+			<property name="DescriptionKey" value="hsescalatorSlopeDesc" />
+			<property name="Model" value="#@modfolder:Resources/HSEscalator.unity3d?HSSideSlopeL" />
+			<property name="SortOrder2" value="0120" />
+		</block>
+		<block name="hsescalatorSlopeR">
+			<property name="Extends" value="hsescalatorSlopeL" />
+			<property name="CustomIcon" value="hsescalatorSlopeR" />
+			<property name="Model" value="#@modfolder:Resources/HSEscalator.unity3d?HSSideSlopeR" />
+			<property name="SortOrder2" value="0121" />
+		</block>
+		<block name="hsescalatorSlopeLUpper">
+			<property name="Extends" value="hsescalatorSlopeL" />
+			<property name="CustomIconTint" value="ffd27a" />
+			<property name="DescriptionKey" value="hsescalatorSlopeUpperDesc" />
+			<property name="ModelOffset" value="0,0.5,0" />
+			<property name="SortOrder2" value="0122" />
+		</block>
+		<block name="hsescalatorSlopeRUpper">
+			<property name="Extends" value="hsescalatorSlopeR" />
+			<property name="CustomIconTint" value="ffd27a" />
+			<property name="DescriptionKey" value="hsescalatorSlopeUpperDesc" />
+			<property name="ModelOffset" value="0,0.5,0" />
+			<property name="SortOrder2" value="0123" />
+		</block>
+
+		<block name="hsescalatorFlatL">
+			<property name="Extends" value="hsescalatorSideMaster" />
+			<property name="CreativeMode" value="Player" />
+			<property name="CustomIcon" value="hsescalatorFlatL" />
+			<property name="DescriptionKey" value="hsescalatorFlatDesc" />
+			<property name="Model" value="#@modfolder:Resources/HSEscalator.unity3d?HSSideFlatL" />
+			<property name="SortOrder2" value="0130" />
+		</block>
+		<block name="hsescalatorFlatR">
+			<property name="Extends" value="hsescalatorFlatL" />
+			<property name="CustomIcon" value="hsescalatorFlatR" />
+			<property name="Model" value="#@modfolder:Resources/HSEscalator.unity3d?HSSideFlatR" />
+			<property name="SortOrder2" value="0131" />
+		</block>
+		<block name="hsescalatorFlatLUpper">
+			<property name="Extends" value="hsescalatorFlatL" />
+			<property name="CustomIconTint" value="ffd27a" />
+			<property name="DescriptionKey" value="hsescalatorFlatUpperDesc" />
+			<property name="ModelOffset" value="0,0.5,0" />
+			<property name="SortOrder2" value="0132" />
+		</block>
+		<block name="hsescalatorFlatRUpper">
+			<property name="Extends" value="hsescalatorFlatR" />
+			<property name="CustomIconTint" value="ffd27a" />
+			<property name="DescriptionKey" value="hsescalatorFlatUpperDesc" />
+			<property name="ModelOffset" value="0,0.5,0" />
+			<property name="SortOrder2" value="0133" />
+		</block>
+
 	</append>
 </configs>
