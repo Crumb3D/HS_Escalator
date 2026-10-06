@@ -40,9 +40,20 @@ public class HSEscalatorPath
         else
         {
             if (Math.Abs(belt.BeltHeight(0f) - 10f) > 0.01f) fails.Add("belt low comb");
-            if (Math.Abs(belt.BeltHeight(1f) - 11f) > 0.01f) fails.Add("belt 2nd flat should be a stair");
-            if (Math.Abs(belt.BeltHeight(4f) - 14f) > 0.01f) fails.Add("belt meets high");
+            if (Math.Abs(belt.BeltHeight(1f) - 10f) > 0.01f) fails.Add("belt low feed step should be level");
+            if (Math.Abs(belt.BeltHeight(2f) - 11f) > 0.01f) fails.Add("belt rise starts after feed step");
+            if (Math.Abs(belt.BeltHeight(5f) - 14f) > 0.01f) fails.Add("belt meets high");
+            if (Math.Abs(belt.BeltHeight(6f) - 14f) > 0.01f) fails.Add("belt high feed step should be level");
             if (Math.Abs(belt.BeltHeight(7f) - 14f) > 0.01f) fails.Add("belt high comb");
+            for (int d = 1; d < 180; d += 7)
+            {
+                float col, top, fold, spin;
+                bool ret;
+                belt.SlotPose(7f + d / 180f, out col, out top, out fold, out spin, out ret);
+                float rad = fold * (float)Math.PI / 180f;
+                float reach = 0.5f * (float)Math.Sin(rad) + 0.25f * Math.Abs((float)Math.Cos(rad));
+                if (top - 0.25f + reach > 7f + 0.001f) { fails.Add("fold pokes above comb plate at " + d); break; }
+            }
         }
         if (fails.Count == 0) return "path tests ok";
         return "path tests failed: " + string.Join("; ", fails.ToArray());
@@ -229,18 +240,18 @@ public class HSEscalatorPath
         return Heights[c0] + (Heights[c0 + 1] - Heights[c0]) * f;
     }
 
-    // Built landings stay flat in the world so we can read the rise. Once the belt
-    // runs, only the first and last column stay a comb — the extra end flats
-    // become stairs (one half-step per column) so the treads stay packed.
+    // The first and last column sit under the comb plates, and the column next to each
+    // stays level so treads slide out from under a plate flat. The rise is one half-step
+    // per column in between; Length >= 4 + rise leaves room for it.
     public float BeltHeight(float col)
     {
         if (Heights == null || Heights.Length == 0) return 0f;
         if (IsWalkway) return Heights[0];
         float start = Heights[0];
         float end = Heights[Length - 1];
-        if (col <= 0f) return start;
-        if (col >= Length - 1) return end;
-        float risen = start + (end >= start ? col : -col);
+        if (col <= 1f) return start;
+        if (col >= Length - 2) return end;
+        float risen = start + (end >= start ? col - 1f : 1f - col);
         if (end >= start)
         {
             if (risen > end) return end;
@@ -317,9 +328,11 @@ public class HSEscalatorPath
         }
         else
         {
-            float mid = top - 0.5f;
+            // Centre drops 1 m over the fold, and never so little that a corner rises above the comb.
             float rad = foldDeg * (float)Math.PI / 180f;
-            treadTop = mid + 0.25f * (float)Math.Cos(rad) + 0.25f;
+            float reach = 0.5f * (float)Math.Sin(rad) + 0.25f * Math.Abs((float)Math.Cos(rad));
+            float drop = Math.Max(0.25f + foldDeg / 180f, reach);
+            treadTop = top + 0.25f - drop;
             onReturn = foldDeg >= 90f;
         }
     }

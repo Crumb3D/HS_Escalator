@@ -43,32 +43,57 @@ public static class HSEscalatorPaint
         return grate;
     }
 
-    // Returns false when the grate cannot be used, so the caller keeps the block's own look.
+    const string TreadMeshName = "hs_escalator_tread";
+    static bool loggedPainted;
+
+    // Block clones fill their mesh after CloneModel returns, so painting is retried by a
+    // component until the mesh is there. Returns false when the grate cannot be used at all.
     public static bool Apply(Transform model, HSEscalatorPinnedLooks pin)
     {
-        if (model == null) return false;
-        var mat = GrateMaterial();
-        if (mat == null) return false;
-        bool any = false;
-        foreach (var r in model.GetComponentsInChildren<Renderer>(true))
-        {
-            var mf = r != null ? r.GetComponent<MeshFilter>() : null;
-            if (mf == null || mf.sharedMesh == null) continue;
-            var mesh = Unwrap(mf.sharedMesh);
-            if (mesh == null) continue;
-            mf.sharedMesh = mesh;
-            if (pin != null) pin.Own(mesh);
-            int subs = Math.Max(1, mesh.subMeshCount);
-            var mats = new Material[subs];
-            for (int i = 0; i < subs; i++) mats[i] = mat;
-            r.sharedMaterials = mats;
-            r.SetPropertyBlock(null);
-            any = true;
-        }
-        return any;
+        if (model == null || GrateMaterial() == null) return false;
+        var skin = model.gameObject.AddComponent<HSEscalatorGrateSkin>();
+        skin.Pin = pin;
+        skin.Paint();
+        return true;
     }
 
-    static Material GrateMaterial()
+    // Paints every renderer under root that carries a block mesh; already-painted ones only get their material checked.
+    public static int PaintAll(Transform root, HSEscalatorPinnedLooks pin)
+    {
+        var mat = GrateMaterial();
+        if (mat == null || root == null) return 0;
+        int painted = 0;
+        foreach (var r in root.GetComponentsInChildren<MeshRenderer>(true))
+        {
+            var mf = r != null ? r.GetComponent<MeshFilter>() : null;
+            var src = mf != null ? mf.sharedMesh : null;
+            if (src == null || src.vertexCount < 3 || !src.isReadable) continue;
+            if (src.name != TreadMeshName)
+            {
+                var mesh = Unwrap(src);
+                if (mesh == null) continue;
+                mf.sharedMesh = mesh;
+                if (pin != null) pin.Own(mesh);
+                if (!loggedPainted)
+                {
+                    loggedPainted = true;
+                    HSEscalatorDebug.Info("Grate painted on moving treads (" + mesh.vertexCount + " verts per step)");
+                }
+            }
+            if (r.sharedMaterial != mat || r.sharedMaterials.Length != Math.Max(1, mf.sharedMesh.subMeshCount))
+            {
+                int subs = Math.Max(1, mf.sharedMesh.subMeshCount);
+                var mats = new Material[subs];
+                for (int i = 0; i < subs; i++) mats[i] = mat;
+                r.sharedMaterials = mats;
+                r.SetPropertyBlock(null);
+            }
+            painted++;
+        }
+        return painted;
+    }
+
+    public static Material GrateMaterial()
     {
         if (grateMat != null) return grateMat;
         if (shaderMissing) return null;
@@ -97,7 +122,7 @@ public static class HSEscalatorPaint
         try { mesh = UnityEngine.Object.Instantiate(src); }
         catch { return null; }
         if (mesh == null || mesh.vertexCount < 3) return null;
-        mesh.name = "hs_escalator_tread";
+        mesh.name = TreadMeshName;
         var verts = mesh.vertices;
         var norms = mesh.normals;
         bool haveN = norms != null && norms.Length == verts.Length;
@@ -142,5 +167,49 @@ public static class HSEscalatorPaint
                 return s;
         }
         return null;
+    }
+
+    // Lists what a step clone actually holds, for when nothing on it could be painted.
+    public static string Describe(Transform root)
+    {
+        var sb = new System.Text.StringBuilder();
+        foreach (var r in root.GetComponentsInChildren<Renderer>(true))
+        {
+            var mf = r.GetComponent<MeshFilter>();
+            var m = mf != null ? mf.sharedMesh : null;
+            sb.Append(r.GetType().Name).Append(" '").Append(r.name).Append("' mesh=")
+              .Append(m == null ? "none" : m.name + " v" + m.vertexCount + (m.isReadable ? "" : " unreadable"))
+              .Append(" mat=").Append(r.sharedMaterial != null ? r.sharedMaterial.name : "none").Append("; ");
+        }
+        return sb.Length == 0 ? "no renderers" : sb.ToString();
+    }
+}
+
+// Keeps a step clone wearing the grate: the game fills or swaps the clone's mesh after it is made.
+public class HSEscalatorGrateSkin : MonoBehaviour
+{
+    public HSEscalatorPinnedLooks Pin;
+    float nextCheck;
+    float born = -1f;
+    bool reported;
+    static int reports;
+
+    public void Paint()
+    {
+        if (born < 0f) born = Time.time;
+        int n = HSEscalatorPaint.PaintAll(transform, Pin);
+        if (n == 0 && !reported && Time.time - born > 3f)
+        {
+            reported = true;
+            if (reports++ < 3)
+                HSEscalatorDebug.Warn("Step clone has nothing to paint: " + HSEscalatorPaint.Describe(transform));
+        }
+    }
+
+    void LateUpdate()
+    {
+        if (Time.time < nextCheck) return;
+        nextCheck = Time.time + 0.25f;
+        Paint();
     }
 }

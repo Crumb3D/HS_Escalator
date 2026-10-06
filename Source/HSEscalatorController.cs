@@ -368,6 +368,7 @@ public class HSEscalatorController : MonoBehaviour
                 continue;
             }
             if (pose.FoldDeg > 12f) continue;
+            if (HSEscalatorBelt.OnCombPlate(path, player.position)) delta.y = 0f;
             if (delta.sqrMagnitude > 0.000001f)
                 fp.SetPosition(fp.Transform.position + delta);
         }
@@ -413,6 +414,7 @@ public class HSEscalatorController : MonoBehaviour
             }
             if (onStep && pose.FoldDeg > 12f) continue;
             var move = delta;
+            if (HSEscalatorBelt.OnCombPlate(path, e.position)) move.y = 0f;
             if (move.sqrMagnitude < 0.000001f)
                 move = BeltTravel(path, 1.6f);
             else

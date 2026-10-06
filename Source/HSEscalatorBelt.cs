@@ -19,6 +19,8 @@ public class HSEscalatorBelt
     readonly List<Collider[]> slotCols = new List<Collider[]>();
     readonly List<Vector3> lastCenter = new List<Vector3>();
     readonly List<Vector3> lastDelta = new List<Vector3>();
+    readonly List<Transform> combs = new List<Transform>();
+    readonly List<Vector3> combWorld = new List<Vector3>();
     HSEscalatorConfigData bound;
     HSEscalatorPath path;
 
@@ -40,6 +42,8 @@ public class HSEscalatorBelt
             var erb = Root.AddComponent<Rigidbody>();
             erb.isKinematic = true;
             erb.useGravity = false;
+            BuildCombPlates(null);
+            Apply(bound.Phase, 0f);
             return;
         }
         Root = new GameObject("HSEscalator_" + bound.EscalatorId);
@@ -61,6 +65,7 @@ public class HSEscalatorBelt
             lastCenter.Add(Vector3.zero);
             lastDelta.Add(Vector3.zero);
         }
+        BuildCombPlates(pin);
         Apply(bound.Phase, 0f);
         HSEscalatorDebug.Verbose("Belt " + bound.EscalatorId + ": " + n + " slots from " + bound.Steps.Count + " cells");
     }
@@ -115,6 +120,68 @@ public class HSEscalatorBelt
         }
     }
 
+    const float CombThick = 0.05f;
+
+    // A fixed plate over the first and last column: riders step on and off it while the
+    // treads fold underneath, so the hinge never leaves a hole to fall into.
+    void BuildCombPlates(HSEscalatorPinnedLooks pin)
+    {
+        int last = path.Length - 1;
+        int lanes = Math.Max(1, path.Width);
+        var cols = last > 0 ? new[] { 0, last } : new[] { 0 };
+        foreach (int c in cols)
+        {
+            int x0, z0, x1, z1;
+            path.WorldXZ(c, 0, out x0, out z0);
+            path.WorldXZ(c, lanes - 1, out x1, out z1);
+            float top = HSEscalatorPath.TreadTop(path.Heights[c]);
+            var world = new Vector3(
+                (Math.Min(x0, x1) + Math.Max(x0, x1) + 1) * 0.5f,
+                top + CombThick * 0.5f,
+                (Math.Min(z0, z1) + Math.Max(z0, z1) + 1) * 0.5f);
+            var size = path.RunAxis == 0
+                ? new Vector3(1f, CombThick, lanes)
+                : new Vector3(lanes, CombThick, 1f);
+
+            var plate = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            plate.name = c == 0 ? "comb_low" : "comb_high";
+            plate.layer = 16;
+            plate.transform.SetParent(Root.transform, false);
+            plate.transform.localScale = size;
+            var r = plate.GetComponent<MeshRenderer>();
+            var grate = pin != null ? HSEscalatorPaint.GrateMaterial() : null;
+            if (r != null && grate != null)
+            {
+                var m = new Material(grate) { hideFlags = HideFlags.DontUnloadUnusedAsset };
+                m.mainTextureScale = path.RunAxis == 0 ? new Vector2(1f, lanes) : new Vector2(lanes, 1f);
+                r.sharedMaterial = m;
+                pin.Own(m);
+            }
+            else if (r != null && pin == null)
+                r.enabled = false;
+            combs.Add(plate.transform);
+            combWorld.Add(world);
+        }
+    }
+
+    public static bool OnCombPlate(HSEscalatorPath path, Vector3 feet)
+    {
+        if (path == null) return false;
+        float x = feet.x, z = feet.z;
+        int lanes = Math.Max(1, path.Width);
+        for (int end = 0; end < 2; end++)
+        {
+            int c = end == 0 ? 0 : path.Length - 1;
+            int x0, z0, x1, z1;
+            path.WorldXZ(c, 0, out x0, out z0);
+            path.WorldXZ(c, lanes - 1, out x1, out z1);
+            if (x < Math.Min(x0, x1) || x > Math.Max(x0, x1) + 1 || z < Math.Min(z0, z1) || z > Math.Max(z0, z1) + 1) continue;
+            float top = HSEscalatorPath.TreadTop(path.Heights[c]) + CombThick;
+            if (feet.y > top - 0.2f && feet.y < top + 1.2f) return true;
+        }
+        return false;
+    }
+
     Vector3 LaneLocal(int lane)
     {
         if (path.RunAxis == 0) return new Vector3(0f, 0f, lane);
@@ -125,6 +192,8 @@ public class HSEscalatorBelt
     {
         if (path == null) return;
         if (Root == null && slots.Count == 0) return;
+        for (int i = 0; i < combs.Count && i < combWorld.Count; i++)
+            if (combs[i] != null) combs[i].position = combWorld[i] - Origin.position;
         int n = path.SlotCount;
         for (int i = 0; i < slots.Count && i < n; i++)
         {
@@ -231,6 +300,8 @@ public class HSEscalatorBelt
         slotCols.Clear();
         lastCenter.Clear();
         lastDelta.Clear();
+        combs.Clear();
+        combWorld.Clear();
         if (Root != null) UnityEngine.Object.Destroy(Root);
         Root = null;
     }
