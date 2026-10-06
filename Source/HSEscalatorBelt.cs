@@ -90,8 +90,7 @@ public class HSEscalatorBelt
                         model.localRotation = bv.Block.shape.GetRotation(bv);
                         foreach (var col in model.GetComponentsInChildren<Collider>(true)) col.enabled = false;
                         foreach (var mb in model.GetComponentsInChildren<MonoBehaviour>(true)) mb.enabled = false;
-                        pin.Keep(model);
-                        HSEscalatorPaint.Apply(model, pin);
+                        if (!HSEscalatorPaint.Apply(model, pin)) pin.Keep(model);
                     }
                 }
             }

@@ -43,7 +43,6 @@ public class HSEscalatorMod : IModApi
         {
             HSEscalatorSettings.Load();
             HSEscalatorConfig.Load();
-            HSEscalatorPaint.EnsureInPaintbrush();
             HSEscalatorController.EnsureCreated();
         }
         catch (Exception e)
