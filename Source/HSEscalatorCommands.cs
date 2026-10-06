@@ -26,6 +26,7 @@ public class ConsoleCmdHSEscalator : ConsoleCmdAbstract
             "hsescalator jog | reverse     - preview motion / flip direction\n" +
             "hsescalator forget            - put the half-blocks back and clear this one\n" +
             "hsescalator speed <0.2-3>     - belt speed\n" +
+            "hsescalator maxdeck [cells]   - host deck-size cap (0 = none). Server / single player only.\n" +
             "hsescalator status | debug    - status / verbose log\n" +
             "hsescalator testpath          - run layout math checks";
     }

@@ -16,6 +16,7 @@ public class HSEscalatorMod : IModApi
             UserDataPath = Path.Combine(GameIO.GetUserGameDataDir(), "HSEscalator");
             Directory.CreateDirectory(UserDataPath);
             HSEscalatorConfig.EvacuateRuntimeFilesFromModFolder();
+            HSEscalatorSettings.Load();
         }
         catch (Exception e)
         {
@@ -40,7 +41,9 @@ public class HSEscalatorMod : IModApi
     {
         try
         {
+            HSEscalatorSettings.Load();
             HSEscalatorConfig.Load();
+            HSEscalatorPaint.EnsureInPaintbrush();
             HSEscalatorController.EnsureCreated();
         }
         catch (Exception e)

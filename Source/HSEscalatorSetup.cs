@@ -43,7 +43,11 @@ public static class HSEscalatorSetup
     public static string Execute(string sub, string arg, EntityPlayerLocal player)
     {
         if (HSEscalatorNet.IsRemoteClient && sub != "status" && sub != "list")
+        {
+            if ((sub == "maxdeck" || sub == "cap") && string.IsNullOrEmpty(arg))
+                return "Deck cap is " + HSEscalatorSettings.Describe() + " (from the server).";
             return HSEscalatorNet.SendSetup(sub, arg, player);
+        }
         return Run(sub, arg, player);
     }
 
@@ -104,6 +108,16 @@ public static class HSEscalatorSetup
                 HSEscalatorConfig.Save();
                 return "Speed = " + s + " blocks/sec";
             }
+            case "maxdeck":
+            case "cap":
+            {
+                if (string.IsNullOrEmpty(arg))
+                    return "Deck cap is " + HSEscalatorSettings.Describe() + ". Usage: hsescalator maxdeck <cells>   (0 = no cap)";
+                int n;
+                if (!int.TryParse(arg, out n))
+                    return "Usage: hsescalator maxdeck <cells>   (0 = no cap)";
+                return HSEscalatorSettings.SetMaxDeckCells(n);
+            }
         }
         return "Unknown command.";
     }
@@ -155,7 +169,7 @@ public static class HSEscalatorSetup
         if (ctrl != null) ctrl.RebuildBelt();
         HSEscalatorConfig.Save();
         return (d.IsWalkway ? "Walkway " : "Escalator ") + d.Length + "x" + d.Width
-            + (d.HasDrive ? " ready." : ". Register the Panel.");
+            + (d.DriveCount > 0 ? " ready." : ". Register the Panel.");
     }
 
     static string RegisterDrive(string arg, EntityPlayerLocal player)
@@ -163,9 +177,9 @@ public static class HSEscalatorSetup
         var d = HSEscalatorConfig.Data;
         if (arg == "clear")
         {
-            d.HasDrive = false;
+            d.ClearDrives();
             HSEscalatorConfig.Save();
-            return "Panel forgotten.";
+            return "Panels forgotten.";
         }
         Vector3i p;
         var err = AimedBlock(player, out p);
@@ -179,15 +193,25 @@ public static class HSEscalatorSetup
             return "Aim at an Escalator Panel. That block is " + HSEscalatorWorld.DisplayName(bv) + ".";
         if (d.HasDeck && d.InDeckXZ(p.x, p.z))
             return "The panel sits on a step. Place it beside an end, not on the deck.";
-        d.DriveX = p.x;
-        d.DriveY = p.y;
-        d.DriveZ = p.z;
-        d.HasDrive = true;
+        if (d.IsDrive(p))
+        {
+            HSEscalatorConfig.Save();
+            return "That panel is already registered.";
+        }
+        if (d.DriveCount >= 2 && !d.IsDrive(p))
+        {
+            d.Drive2X = p.x;
+            d.Drive2Y = p.y;
+            d.Drive2Z = p.z;
+            d.HasDrive2 = true;
+        }
+        else
+            d.AddDrive(p);
         d.StopReason = null;
         HSEscalatorConfig.Save();
         string power;
         bool on = HSEscalatorPower.IsDrivePowered(d, out power);
-        return "Panel registered at " + p + ". " + (on ? "Powered — it will run." : power);
+        return "Panel " + d.DriveCount + " registered at " + p + ". " + (on ? "Powered — it will run." : power);
     }
 
     static string Forget(HSEscalatorConfigData d)
@@ -199,7 +223,7 @@ public static class HSEscalatorSetup
         d.End1 = d.End2 = null;
         d.HasDeck = false;
         d.Captured = false;
-        d.HasDrive = false;
+        d.ClearDrives();
         d.Steps.Clear();
         d.Running = false;
         d.StopReason = null;

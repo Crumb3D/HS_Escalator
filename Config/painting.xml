@@ -1,0 +1,11 @@
+<configs>
+	<append xpath="/paints">
+		<!-- TextureId 445 is vanilla tread plate until the grate is written to a free atlas slice. -->
+		<paint id="242" name="txName_HSEscalatorGrate">
+			<property name="TextureId" value="445"/>
+			<property name="Group" value="txGroupMetal"/>
+			<property name="PaintCost" value="1"/>
+			<property name="SortIndex" value="99"/>
+		</paint>
+	</append>
+</configs>

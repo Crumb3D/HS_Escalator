@@ -35,6 +35,8 @@ public class HSEscalatorConfigData
 
     public int DriveX, DriveY, DriveZ;
     public bool HasDrive;
+    public int Drive2X, Drive2Y, Drive2Z;
+    public bool HasDrive2;
 
     public float Speed = 0.6f;
     public int Direction = 1;
@@ -49,6 +51,46 @@ public class HSEscalatorConfigData
 
     [JsonIgnore]
     public Vector3i DrivePos { get { return new Vector3i(DriveX, DriveY, DriveZ); } }
+
+    [JsonIgnore]
+    public Vector3i Drive2Pos { get { return new Vector3i(Drive2X, Drive2Y, Drive2Z); } }
+
+    [JsonIgnore]
+    public int DriveCount
+    {
+        get { return (HasDrive ? 1 : 0) + (HasDrive2 ? 1 : 0); }
+    }
+
+    public bool IsDrive(Vector3i pos)
+    {
+        if (HasDrive && DriveX == pos.x && DriveY == pos.y && DriveZ == pos.z) return true;
+        if (HasDrive2 && Drive2X == pos.x && Drive2Y == pos.y && Drive2Z == pos.z) return true;
+        return false;
+    }
+
+    public void AddDrive(Vector3i p)
+    {
+        if (HasDrive && DriveX == p.x && DriveY == p.y && DriveZ == p.z) return;
+        if (HasDrive2 && Drive2X == p.x && Drive2Y == p.y && Drive2Z == p.z) return;
+        if (!HasDrive)
+        {
+            DriveX = p.x;
+            DriveY = p.y;
+            DriveZ = p.z;
+            HasDrive = true;
+            return;
+        }
+        Drive2X = p.x;
+        Drive2Y = p.y;
+        Drive2Z = p.z;
+        HasDrive2 = true;
+    }
+
+    public void ClearDrives()
+    {
+        HasDrive = false;
+        HasDrive2 = false;
+    }
 
     public HSEscalatorPath ToPath()
     {
@@ -89,6 +131,7 @@ public class HSEscalatorFile
 {
     public string ActiveId;
     public bool Debug;
+    public int MaxDeckCells;
     public List<HSEscalatorConfigData> Escalators = new List<HSEscalatorConfigData>();
 }
 
@@ -156,7 +199,13 @@ public static class HSEscalatorConfig
 
     public static string ToSyncJson()
     {
-        var file = new HSEscalatorFile { ActiveId = ActiveId, Debug = HSEscalatorDebug.Enabled, Escalators = Escalators };
+        var file = new HSEscalatorFile
+        {
+            ActiveId = ActiveId,
+            Debug = HSEscalatorDebug.Enabled,
+            MaxDeckCells = HSEscalatorSettings.MaxDeckCells,
+            Escalators = Escalators
+        };
         return JsonConvert.SerializeObject(file);
     }
 
@@ -173,6 +222,7 @@ public static class HSEscalatorConfig
             foreach (var d in Escalators) Normalize(d);
             Use(ById(ActiveId) ?? Escalators[0]);
             HSEscalatorDebug.Enabled = file.Debug;
+            HSEscalatorSettings.ApplyFromServer(file.MaxDeckCells);
             foreach (var d in Escalators)
             {
                 if (d.Debug) HSEscalatorDebug.Enabled = true;
@@ -259,7 +309,13 @@ public static class HSEscalatorConfig
             if (HSEscalatorNet.IsRemoteClient) return;
             var dir = RuntimeDir;
             if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-            var file = new HSEscalatorFile { ActiveId = ActiveId, Debug = HSEscalatorDebug.Enabled, Escalators = Escalators };
+            var file = new HSEscalatorFile
+            {
+                ActiveId = ActiveId,
+                Debug = HSEscalatorDebug.Enabled,
+                MaxDeckCells = HSEscalatorSettings.MaxDeckCells,
+                Escalators = Escalators
+            };
             File.WriteAllText(FilePath, JsonConvert.SerializeObject(file, Formatting.Indented));
             HSEscalatorNet.BroadcastConfig();
         }
@@ -290,8 +346,7 @@ public static class HSEscalatorConfig
     public static HSEscalatorConfigData DriveOwner(Vector3i pos)
     {
         foreach (var d in Escalators)
-            if (d.HasDrive && d.DriveX == pos.x && d.DriveY == pos.y && d.DriveZ == pos.z)
-                return d;
+            if (d.IsDrive(pos)) return d;
         return null;
     }
 
@@ -329,10 +384,10 @@ public static class HSEscalatorConfig
     {
         if (d == null) return "none";
         if (!d.HasDeck)
-            return d.EscalatorId + ": no steps yet" + (d.HasDrive ? " (panel ok)" : " (no panel)");
+            return d.EscalatorId + ": no steps yet" + (d.DriveCount > 0 ? " (panel ok)" : " (no panel)");
         var kind = d.IsWalkway ? "walkway" : ("rise " + d.RiseHalf);
         return d.EscalatorId + ": " + d.Length + "x" + d.Width + " " + kind
-            + (d.HasDrive ? "" : " (no panel)")
+            + (d.DriveCount > 0 ? "" : " (no panel)")
             + (d.Running ? " running" : "");
     }
 

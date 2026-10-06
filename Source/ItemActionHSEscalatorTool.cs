@@ -74,7 +74,7 @@ public class ItemActionHSEscalatorTool : ItemAction
             var d = HSEscalatorConfig.Data ?? new HSEscalatorConfigData();
             bool needEnd1 = d.End1 == null;
             bool needEnd2 = d.End2 == null;
-            bool needDrive = !d.HasDrive;
+            bool needDrive = d.DriveCount < 2;
             Add(radial, 0, "ui_game_symbol_assemble", Localization.Get("hsescalatorRadialNew"), false);
             Add(radial, 1, "ui_game_symbol_map", Localization.Get("hsescalatorRadialUse"), false);
             Add(radial, 2, "ui_game_symbol_map_waypoint_set", Localization.Get("hsescalatorRadialEnd1"), needEnd1);

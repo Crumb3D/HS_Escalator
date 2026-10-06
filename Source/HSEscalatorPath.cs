@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 // Pure layout math. Heights are tread tops in half-meters (lower half at Y => 2Y+1, upper => 2Y+2).
 public class HSEscalatorPath
@@ -150,6 +151,37 @@ public class HSEscalatorPath
     public static float TreadTop(int height)
     {
         return height * 0.5f;
+    }
+
+    public bool TryWorldCol(float x, float z, out float col, out int lane)
+    {
+        col = 0f;
+        lane = 0;
+        if (Length < 1 || Width < 1) return false;
+        if (RunAxis == 0)
+        {
+            if (RunSign == 0) return false;
+            col = (x - OriginX) / RunSign;
+            lane = Mathf.FloorToInt(z - LaneMinZ);
+        }
+        else
+        {
+            if (RunSign == 0) return false;
+            col = (z - OriginZ) / RunSign;
+            lane = Mathf.FloorToInt(x - LaneMinX);
+        }
+        if (col < -0.35f || col > Length - 0.65f) return false;
+        if (lane < 0 || lane >= Width) return false;
+        return true;
+    }
+
+    public bool InReturnCavity(Vector3 pos)
+    {
+        float col;
+        int lane;
+        if (!TryWorldCol(pos.x, pos.z, out col, out lane)) return false;
+        float top = BeltHeight(col) * 0.5f;
+        return pos.y < top - 0.2f && pos.y > top - 1.4f;
     }
 
     public void WorldXZ(int col, int lane, out int x, out int z)

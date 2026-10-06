@@ -6,7 +6,7 @@ Side walls, skirts, a ceiling, lights, and a still handrail stay where you put t
 
 ## Blocks that move
 
-Any building material **shaped as a half-block**. When the belt runs, every tread is painted with the escalator grate. A wide tread is several half-blocks side by side.
+Any building material **shaped as a half-block**. When the belt runs, every tread is painted with the escalator grate. Width is whatever you build — 1 file or 20 — as long as each column is the same height across. Mark opposite corners of the **whole** deck.
 
 Not steps: full cubes, wedges, ramps, plates, sheets, doors, ladders, terrain.
 
@@ -17,8 +17,8 @@ Not steps: full cubes, wedges, ramps, plates, sheets, doors, ladders, terrain.
 3. Leave **two** blocks of air above every tread.
 4. Put a normal floor just **outside** each end, flush with the end steps.
 5. Cover the sides however you want, outside the step deck.
-6. Place an **Escalator Panel** beside an end. Wire it.
-7. Setup tool: **Set End 1** and **Set End 2** on opposite corners of the **step deck only**, then **Register Panel**.
+6. Place an **Escalator Panel** beside an end. You can put a second panel at the other end. Wire at least one.
+7. Setup tool: **Set End 1** and **Set End 2** on opposite corners of the **step deck only**, then **Register Panel** on each panel.
 
 ## Default escalator
 
@@ -51,3 +51,10 @@ Wire the registered panel. Hold E on it for Start/Stop, Forward/Reverse, and Run
 A solid in the return or headroom stops the belt and says why.
 
 Admin: `giveself hsescalatorTool` / `giveself hsescalatorDrive` and `hsescalator`.
+
+## Deck size cap (host)
+
+No cap by default (`MaxDeckCells` 0). The host — dedicated server, or the single-player client — can set one so a giant deck cannot stall the box. The server value is sent to every client and **overrides** their local file.
+
+- File: `HSEscalatorSettings.json` in the mod folder, or `%AppData%/7DaysToDie/HSEscalator/HSEscalatorSettings.json` (wins), or the world save folder (wins last).
+- Console: `hsescalator maxdeck 256`   (`0` turns the cap off)

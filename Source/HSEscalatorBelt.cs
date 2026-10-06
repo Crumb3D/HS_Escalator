@@ -16,6 +16,7 @@ public class HSEscalatorBelt
 {
     public GameObject Root;
     readonly List<Transform> slots = new List<Transform>();
+    readonly List<Collider[]> slotCols = new List<Collider[]>();
     readonly List<Vector3> lastCenter = new List<Vector3>();
     readonly List<Vector3> lastDelta = new List<Vector3>();
     HSEscalatorConfigData bound;
@@ -56,6 +57,7 @@ public class HSEscalatorBelt
             slot.transform.SetParent(Root.transform, false);
             BuildSlot(world, slot.transform, proto, pin, ref layer);
             slots.Add(slot.transform);
+            slotCols.Add(slot.GetComponentsInChildren<Collider>(true));
             lastCenter.Add(Vector3.zero);
             lastDelta.Add(Vector3.zero);
         }
@@ -84,12 +86,12 @@ public class HSEscalatorBelt
                     var model = ic.CloneModel(world, bv.ToItemValue(), worldPos, holder.transform, _textureFullArray: HSEscalatorWorld.FromLongs(cell.Tex));
                     if (model != null)
                     {
-                        model.localPosition = Vector3.zero;
+                        model.localPosition = new Vector3(0f, 0.25f, 0f);
                         model.localRotation = bv.Block.shape.GetRotation(bv);
                         foreach (var col in model.GetComponentsInChildren<Collider>(true)) col.enabled = false;
                         foreach (var mb in model.GetComponentsInChildren<MonoBehaviour>(true)) mb.enabled = false;
                         pin.Keep(model);
-                        HSEscalatorPaint.Apply(model);
+                        HSEscalatorPaint.Apply(model, pin);
                     }
                 }
             }
@@ -133,6 +135,14 @@ public class HSEscalatorBelt
             var t = slots[i];
             t.position = pose.Center;
             t.rotation = FoldRotation(pose.FoldSpin);
+            bool solid = !pose.OnReturn && pose.FoldDeg < 20f;
+            if (i < slotCols.Count)
+            {
+                var cols = slotCols[i];
+                if (cols != null)
+                    for (int c = 0; c < cols.Length; c++)
+                        if (cols[c] != null && cols[c].enabled != solid) cols[c].enabled = solid;
+            }
             if (i < lastCenter.Count)
             {
                 var was = lastCenter[i];
@@ -191,22 +201,23 @@ public class HSEscalatorBelt
             if (!Eval(bound.Phase + i, 0, out p)) continue;
             if (p.OnReturn || p.FoldDeg >= 80f) continue;
             var c = p.Center + Origin.position;
-            float dx = worldFeet.x - c.x;
-            float dz = worldFeet.z - c.z;
             float dy = worldFeet.y - p.TreadTop;
             if (dy < -0.35f || dy > 1.4f) continue;
             float across = path.Width * 0.5f + 0.35f;
+            float along;
             if (path.RunAxis == 0)
             {
                 float midZ = path.LaneMinZ + (path.Width - 1) * 0.5f + 0.5f;
                 if (Math.Abs(worldFeet.z - midZ) > across) continue;
+                along = worldFeet.x - c.x;
             }
             else
             {
                 float midX = path.LaneMinX + (path.Width - 1) * 0.5f + 0.5f;
                 if (Math.Abs(worldFeet.x - midX) > across) continue;
+                along = worldFeet.z - c.z;
             }
-            float d2 = dx * dx + dz * dz;
+            float d2 = along * along;
             if (d2 < bestD) { bestD = d2; best = i; bestPose = p; }
         }
         if (best < 0) return false;
@@ -218,6 +229,7 @@ public class HSEscalatorBelt
     public void Destroy()
     {
         slots.Clear();
+        slotCols.Clear();
         lastCenter.Clear();
         lastDelta.Clear();
         if (Root != null) UnityEngine.Object.Destroy(Root);
@@ -246,6 +258,11 @@ public class HSEscalatorPinnedLooks : MonoBehaviour
             }
             r.materials = copies;
         }
+    }
+
+    public void Own(UnityEngine.Object obj)
+    {
+        if (obj != null) owned.Add(obj);
     }
 
     void OnDestroy()

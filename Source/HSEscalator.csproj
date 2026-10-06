@@ -74,6 +74,7 @@
     <Compile Include="HSEscalatorMod.cs" />
     <Compile Include="HSEscalatorDebug.cs" />
     <Compile Include="HSEscalatorConfig.cs" />
+    <Compile Include="HSEscalatorSettings.cs" />
     <Compile Include="HSEscalatorPath.cs" />
     <Compile Include="HSEscalatorWorld.cs" />
     <Compile Include="HSEscalatorBelt.cs" />

@@ -188,8 +188,9 @@ public static class HSEscalatorWorld
             laneMinZ = 0;
         }
         if (length < 3) return "Need at least 3 steps along the run. This span is " + length + ".";
-        if (width < 1 || width > 8) return "Width must be 1 to 8. This span is " + width + ".";
-        if (length * width > 256) return "Deck is too big (" + length + "x" + width + "). Limit is 256 step cells.";
+        if (width < 1) return "Need at least 1 step across. This span is " + width + ".";
+        var capErr = HSEscalatorSettings.RejectIfOverCap(length, width);
+        if (capErr != null) return capErr;
 
         var probe = new HSEscalatorPath
         {
@@ -468,32 +469,35 @@ public static class HSEscalatorWorld
         problem = null;
         var path = d != null ? d.ToPath() : null;
         if (world == null || path == null) { problem = "no escalator"; return false; }
-        int x, z;
-        path.OutsideLanding(lowEnd, out x, out z);
         int col = lowEnd ? 0 : path.Length - 1;
         float want = HSEscalatorPath.TreadTop(path.Heights[col]);
         int y0 = HSEscalatorPath.BlockYFromHeight(path.Heights[col]);
-        bool found = false;
-        for (int y = y0 - 1; y <= y0; y++)
+        for (int w = 0; w < Math.Max(1, path.Width); w++)
         {
-            var pos = new Vector3i(x, y, z);
-            if (world.GetChunkFromWorldPos(pos) == null) continue;
-            var bv = world.GetBlock(pos);
-            if (bv.isair) continue;
-            Bounds box;
-            float top = y + 1f;
-            if (UnionBounds(bv, out box)) top = y + box.max.y;
-            if (Math.Abs(top - want) <= 0.55f) found = true;
-            if (bv.Block != null && bv.Block.IsCollideMovement && box.size.y > 0.7f && y == y0)
+            int x, z;
+            path.OutsideLanding(lowEnd, w, out x, out z);
+            bool found = false;
+            for (int y = y0 - 1; y <= y0; y++)
             {
-                problem = DisplayName(bv) + " blocks the exit at " + pos;
+                var pos = new Vector3i(x, y, z);
+                if (world.GetChunkFromWorldPos(pos) == null) continue;
+                var bv = world.GetBlock(pos);
+                if (bv.isair) continue;
+                Bounds box;
+                float top = y + 1f;
+                if (UnionBounds(bv, out box)) top = y + box.max.y;
+                if (Math.Abs(top - want) <= 0.55f) found = true;
+                if (bv.Block != null && bv.Block.IsCollideMovement && box.size.y > 0.7f && y == y0)
+                {
+                    problem = DisplayName(bv) + " blocks the exit at " + pos;
+                    return false;
+                }
+            }
+            if (!found)
+            {
+                problem = "no landing floor flush with the " + (lowEnd ? "low" : "high") + " end at " + x + " " + y0 + " " + z;
                 return false;
             }
-        }
-        if (!found)
-        {
-            problem = "no landing floor flush with the " + (lowEnd ? "low" : "high") + " end at " + x + " " + y0 + " " + z;
-            return false;
         }
         return true;
     }
