@@ -261,7 +261,7 @@ public class HSEscalatorBelt
         if (path == null || bound == null) return false;
         int n = path.SlotCount;
         int best = -1;
-        float bestD = 0.65f * 0.65f;
+        float bestD = float.MaxValue;
         HSEscalatorSlotPose bestPose = null;
         for (int i = 0; i < n; i++)
         {
@@ -269,8 +269,9 @@ public class HSEscalatorBelt
             if (!Eval(bound.Phase + i, 0, out p)) continue;
             if (p.OnReturn || p.FoldDeg >= 80f) continue;
             var c = p.Center + Origin.position;
+            // Feet must be on this tread's surface (or the comb plate just above it), not merely over it.
             float dy = worldFeet.y - p.TreadTop;
-            if (dy < -0.35f || dy > 1.4f) continue;
+            if (dy < -0.3f || dy > 0.35f) continue;
             float across = path.Width * 0.5f + 0.35f;
             float along;
             if (path.RunAxis == 0)
@@ -285,7 +286,8 @@ public class HSEscalatorBelt
                 if (Math.Abs(worldFeet.x - midX) > across) continue;
                 along = worldFeet.z - c.z;
             }
-            float d2 = along * along;
+            if (Math.Abs(along) > 0.6f) continue;
+            float d2 = along * along + 4f * dy * dy;
             if (d2 < bestD) { bestD = d2; best = i; bestPose = p; }
         }
         if (best < 0) return false;

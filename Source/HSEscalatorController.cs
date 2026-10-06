@@ -361,12 +361,6 @@ public class HSEscalatorController : MonoBehaviour
             if (!belt.StepUnder(player.position, out pose, out delta)) continue;
             if (LeavingOntoLanding(world, path, player.position, pose))
                 continue;
-            Vector3 stand;
-            if (TrySpitOntoLanding(world, path, player.position, pose, out stand))
-            {
-                fp.SetPosition(fp.Transform.position + (stand - player.position));
-                continue;
-            }
             if (pose.FoldDeg > 12f) continue;
             if (HSEscalatorBelt.OnCombPlate(path, player.position)) delta.y = 0f;
             if (delta.sqrMagnitude > 0.000001f)
@@ -397,21 +391,6 @@ public class HSEscalatorController : MonoBehaviour
             Vector3 delta;
             bool onStep = belt.StepUnder(e.position, out pose, out delta);
             if (!onStep && !OnTread(path, e.position)) continue;
-            Vector3 stand;
-            if (AtExitEnd(path, e.position) && NearestExitLanding(world, path, out stand))
-            {
-                e.SetPosition(stand, true);
-                var landed = e as EntityVehicle;
-                if (landed != null) landed.PhysicsResetAndSleep();
-                continue;
-            }
-            if (onStep && TrySpitOntoLanding(world, path, e.position, pose, out stand))
-            {
-                e.SetPosition(stand, true);
-                var landed = e as EntityVehicle;
-                if (landed != null) landed.PhysicsResetAndSleep();
-                continue;
-            }
             if (onStep && pose.FoldDeg > 12f) continue;
             var move = delta;
             if (HSEscalatorBelt.OnCombPlate(path, e.position)) move.y = 0f;
@@ -448,23 +427,13 @@ public class HSEscalatorController : MonoBehaviour
             if (e == null || e.AttachedToEntity != null) continue;
             if (e is EntityFallingBlock) continue;
             if (e is EntityPlayer) continue;
-            if (!path.InReturnCavity(e.position) && !AtExitEnd(path, e.position) && !WedgedInComb(path, e.position)) continue;
+            if (!path.InReturnCavity(e.position)) continue;
             Vector3 stand;
             if (!NearestLanding(world, path, e.position, out stand)) continue;
             e.SetPosition(stand, true);
             var v = e as EntityVehicle;
             if (v != null) v.PhysicsResetAndSleep();
         }
-    }
-
-    bool WedgedInComb(HSEscalatorPath path, Vector3 feet)
-    {
-        float col;
-        int lane;
-        if (!path.TryWorldCol(feet.x, feet.z, out col, out lane)) return false;
-        float top = path.BeltHeight(col) * 0.5f;
-        if (feet.y < top - 0.15f || feet.y > top + 1.3f) return false;
-        return AtExitCol(path, col);
     }
 
     bool NearestLanding(World world, HSEscalatorPath path, Vector3 feet, out Vector3 stand)
@@ -489,25 +458,9 @@ public class HSEscalatorController : MonoBehaviour
         float col;
         int lane;
         if (!path.TryWorldCol(pos.x, pos.z, out col, out lane)) return false;
-        float top = path.BeltHeight(col) * 0.5f;
-        return pos.y >= top - 0.25f && pos.y <= top + 2.2f;
-    }
-
-    bool AtExitEnd(HSEscalatorPath path, Vector3 pos)
-    {
-        float col;
-        int lane;
-        if (!path.TryWorldCol(pos.x, pos.z, out col, out lane)) return false;
-        float top = path.BeltHeight(col) * 0.5f;
-        if (pos.y < top - 0.25f || pos.y > top + 2.2f) return false;
-        return AtExitCol(path, col);
-    }
-
-    bool AtExitCol(HSEscalatorPath path, float col)
-    {
-        bool towardHigh = Bound != null && Bound.Direction >= 0;
-        if (towardHigh) return col >= path.Length - 2.1f;
-        return col <= 1.6f;
+        float a = path.BeltHeight(col - 0.5f) * 0.5f;
+        float b = path.BeltHeight(col + 0.5f) * 0.5f;
+        return pos.y >= Math.Min(a, b) - 0.25f && pos.y <= Math.Max(a, b) + 0.3f;
     }
 
     Vector3 BeltTravel(HSEscalatorPath path, float extra)
@@ -516,38 +469,6 @@ public class HSEscalatorController : MonoBehaviour
         float dist = Bound.Direction * (Bound.Speed + extra) * Time.deltaTime;
         if (path.RunAxis == 0) return new Vector3(path.RunSign * dist, 0f, 0f);
         return new Vector3(0f, 0f, path.RunSign * dist);
-    }
-
-    bool NearestExitLanding(World world, HSEscalatorPath path, out Vector3 stand)
-    {
-        bool low = Bound == null || Bound.Direction < 0;
-        float mx, mz;
-        path.WorldXZ(low ? 0f : path.Length - 1f, Math.Max(0, path.Width / 2), out mx, out mz);
-        if (!HSEscalatorWorld.TryLandingStand(world, path, low, new Vector3(mx + 0.5f, 0f, mz + 0.5f), out stand))
-        {
-            stand = Vector3.zero;
-            return false;
-        }
-        int push = low ? -path.RunSign : path.RunSign;
-        if (path.RunAxis == 0) stand.x += push * 0.45f;
-        else stand.z += push * 0.45f;
-        return true;
-    }
-
-    bool TrySpitOntoLanding(World world, HSEscalatorPath path, Vector3 feet, HSEscalatorSlotPose pose, out Vector3 stand)
-    {
-        stand = feet;
-        if (path == null || pose == null || Bound == null) return false;
-        float last = Math.Max(1, path.Length) - 1f;
-        bool towardHigh = Bound.Direction >= 0;
-        bool atHigh = pose.Col >= last - 0.7f;
-        bool atLow = pose.Col <= 0.7f;
-        bool exitHigh = towardHigh && atHigh;
-        bool exitLow = !towardHigh && atLow;
-        if (!exitHigh && !exitLow) return false;
-        if (pose.FoldDeg <= 12f && !(towardHigh ? atHigh && pose.Col >= last - 0.35f : atLow && pose.Col <= 0.35f))
-            return false;
-        return HSEscalatorWorld.TryLandingStand(world, path, exitLow, feet, out stand);
     }
 
     bool LeavingOntoLanding(World world, HSEscalatorPath path, Vector3 feet, HSEscalatorSlotPose pose)
