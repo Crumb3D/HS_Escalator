@@ -36,6 +36,22 @@
 			<property name="FilterTags" value="MC_playerBlocks,SC_electrical" />
 		</block>
 
+		<block name="hsescalatorHide">
+			<property name="CreativeMode" value="None" />
+			<property name="Class" value="HSEscalatorHide, HSEscalator" />
+			<property name="Material" value="Msteel" />
+			<property name="Shape" value="Invisible" />
+			<property name="StabilitySupport" value="true" />
+			<property name="ImposterExclude" value="true" />
+			<property name="ImposterDontBlock" value="true" />
+			<property name="WaterFlow" value="permitted" />
+			<property name="Collide" value="none" />
+			<property name="CanPickup" value="false" />
+			<property name="MaxDamage" value="10000" />
+			<drop event="Destroy" count="0" />
+			<property name="FilterTags" value="MC_helpers,SC_helperIndustrial" />
+		</block>
+
 		<block name="hsescalatorSideMaster">
 			<property name="CreativeMode" value="None" />
 			<property name="Material" value="Mmetal_weak" />

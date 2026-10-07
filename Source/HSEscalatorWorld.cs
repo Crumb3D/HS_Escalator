@@ -391,8 +391,90 @@ public static class HSEscalatorWorld
             changes.Add(new BlockChangeInfo(pos, bv, s.Density, FromLongs(s.Tex)));
         }
         if (changes.Count > 0) world.SetBlocksRPC(changes);
+        RestoreSupports(world, d, !keepCaptured);
         if (!keepCaptured) d.Captured = false;
         HSEscalatorDebug.Info("Restored " + changes.Count + " step(s) for " + d.EscalatorId);
+    }
+
+    public static void HideSupports(World world, HSEscalatorConfigData d)
+    {
+        if (world == null || d == null || !d.Captured) return;
+        var path = d.ToPath();
+        if (path == null) return;
+        if (d.Supports == null) d.Supports = new List<HSEscalatorSupportCell>();
+        var hide = Block.GetBlockValue("hsescalatorHide");
+        if (hide.isair || hide.Block == null || hide.Block.GetBlockName() != "hsescalatorHide")
+        {
+            HSEscalatorDebug.Warn("hsescalatorHide is not loaded, support walls stay visible");
+            return;
+        }
+        var changes = new List<BlockChangeInfo>();
+        for (int side = 0; side < 2; side++)
+        for (int c = 0; c < path.Length; c++)
+        {
+            int x, y, z;
+            HSEscalatorRail.SideCell(path, c, side, out x, out y, out z);
+            for (int dy = -1; dy <= 2; dy++)
+            {
+                int by = y + dy;
+                if (by < 0 || by > 255) continue;
+                var pos = new Vector3i(x, by, z);
+                var chunk = world.GetChunkFromWorldPos(pos) as Chunk;
+                if (chunk == null) continue;
+                var bv = world.GetBlock(pos);
+                if (bv.type == hide.type || bv.ischild) continue;
+                if (!HSEscalatorRail.IsSupport(world, x, by, z)) continue;
+                int lx = World.toBlockXZ(pos.x), ly = World.toBlockY(pos.y), lz = World.toBlockXZ(pos.z);
+                var saved = FindSupport(d, x, by, z);
+                if (saved == null)
+                {
+                    saved = new HSEscalatorSupportCell { X = x, Y = by, Z = z };
+                    d.Supports.Add(saved);
+                }
+                saved.Raw = bv.rawData;
+                saved.Damage = bv.damage;
+                saved.Density = chunk.GetDensity(lx, ly, lz);
+                saved.Tex = ToLongs(chunk.GetTextureFullArray(lx, ly, lz));
+                changes.Add(new BlockChangeInfo(pos, hide, saved.Density));
+            }
+        }
+        if (changes.Count == 0) return;
+        world.SetBlocksRPC(changes);
+        HSEscalatorConfig.Save();
+        HSEscalatorDebug.Info("Hid " + changes.Count + " support block(s) for " + d.EscalatorId);
+    }
+
+    static void RestoreSupports(World world, HSEscalatorConfigData d, bool clear)
+    {
+        if (d.Supports == null || d.Supports.Count == 0)
+        {
+            if (clear && d.Supports != null) d.Supports.Clear();
+            return;
+        }
+        var hide = Block.GetBlockValue("hsescalatorHide");
+        var changes = new List<BlockChangeInfo>();
+        foreach (var s in d.Supports)
+        {
+            var pos = new Vector3i(s.X, s.Y, s.Z);
+            if (world.GetChunkFromWorldPos(pos) == null) continue;
+            var bv = world.GetBlock(pos);
+            if (hide.Block != null && bv.type != hide.type) continue;
+            changes.Add(new BlockChangeInfo(pos, new BlockValue(s.Raw, s.Damage), s.Density, FromLongs(s.Tex)));
+        }
+        if (changes.Count > 0) world.SetBlocksRPC(changes);
+        if (clear) d.Supports.Clear();
+        if (changes.Count > 0)
+            HSEscalatorDebug.Info("Restored " + changes.Count + " support block(s) for " + d.EscalatorId);
+    }
+
+    static HSEscalatorSupportCell FindSupport(HSEscalatorConfigData d, int x, int y, int z)
+    {
+        for (int i = 0; i < d.Supports.Count; i++)
+        {
+            var s = d.Supports[i];
+            if (s != null && s.X == x && s.Y == y && s.Z == z) return s;
+        }
+        return null;
     }
 
     public static void EnsureCapturedRemoved(World world, HSEscalatorConfigData d)

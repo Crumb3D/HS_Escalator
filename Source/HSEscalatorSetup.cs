@@ -228,7 +228,7 @@ public static class HSEscalatorSetup
         d.Running = false;
         d.StopReason = null;
         HSEscalatorConfig.Save();
-        return "Forgot " + d.EscalatorId + ". Original half-blocks were put back.";
+        return "Forgot " + d.EscalatorId + ". Steps and support walls were put back.";
     }
 
     static void BindAimed(Vector3i p)

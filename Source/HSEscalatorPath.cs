@@ -186,6 +186,47 @@ public class HSEscalatorPath
         return true;
     }
 
+    // The whole deck, including both end landings. Feet can sit on this column or the step beside it.
+    public bool OnRidingSurface(Vector3 feet)
+    {
+        float col;
+        int lane;
+        if (!OverDeck(feet.x, feet.z, out col, out lane)) return false;
+        int c = (int)Math.Floor(col);
+        if (c < 0) c = 0;
+        if (c >= Length) c = Length - 1;
+        for (int k = c - 1; k <= c + 1; k++)
+        {
+            if (k < 0 || k >= Length) continue;
+            float surface = BeltHeight(k) * 0.5f - 0.02f;
+            float dy = feet.y - surface;
+            if (dy >= -0.6f && dy <= 0.9f) return true;
+        }
+        return false;
+    }
+
+    bool OverDeck(float x, float z, out float col, out int lane)
+    {
+        col = 0f;
+        lane = 0;
+        if (Length < 1 || Width < 1) return false;
+        if (RunAxis == 0)
+        {
+            if (RunSign == 0) return false;
+            col = (x - OriginX) / RunSign;
+            lane = Mathf.FloorToInt(z - LaneMinZ);
+        }
+        else
+        {
+            if (RunSign == 0) return false;
+            col = (z - OriginZ) / RunSign;
+            lane = Mathf.FloorToInt(x - LaneMinX);
+        }
+        if (col < -0.2f || col >= Length + 0.15f) return false;
+        if (lane < 0 || lane >= Width) return false;
+        return true;
+    }
+
     public bool InReturnCavity(Vector3 pos)
     {
         float col;

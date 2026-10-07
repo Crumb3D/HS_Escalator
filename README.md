@@ -2,7 +2,7 @@
 
 You build the escalator. The mod reads the half-blocks you placed and runs them as a moving walkway or a real escalator (level treads, stair rise, fold under, return underneath).
 
-Side pieces, walls, and a ceiling stay where you put them. Do not include them in the two corners. A rubber handrail is added on each side and moves with the belt.
+Build the steps, then put a wall in the cell beside them. That wall is temporary support. Once the deck is captured the mod hides it and draws the escalator side in its place. Do not include the walls in the two corners.
 
 ## Blocks that move
 
@@ -46,16 +46,16 @@ If the deck is wrong, the tool names the cell. It does not guess a different slo
 
 ## Handrail
 
-Place these **beside** the steps, outside the two corners, at the same block height as that step. Rotate while placing: the glass faces the steps. On a slope piece the high end points uphill. On an end piece the curve points off the end of the stairs.
+Put any block in the cell beside the steps — a sheet, a plate, or a full cube. That block is only there to hold the escalator up. After you set both ends, the mod remembers it and hides it. The hidden block does not stop you, and zombies cannot break it. You bump the escalator side, and you can walk under the steps. The side is drawn on the step edge:
 
-Left and Right are mirrors. The same end piece works at the top or the bottom once you rotate it — pick the mirror that keeps the glass toward the steps.
+- A dark metal side from under the returning steps up over the top steps
+- A clear glass panel above that
+- A rubber rail on the step side of the glass
+- A glass sheet closing the bottom, so the return shows through
 
-- **End** — the curved newel. First and last column, or the cell just past that end beside the landing.
-- **Slope** — one block of the rising run. One per rising step.
-- **Flat** — walkways, and the level steps at each end.
-- **Upper** — use this when the step beside the piece is the **top half** of the block. The plain piece is for the bottom half. The rubber still follows the steps if you mix them up; the glass just will not meet it.
+The rubber runs with the belt. At each end it curves around and comes back underneath, the same loop as the steps.
 
-No pieces, but a full-block wall in that side cell: the rail mounts on the wall. Half-blocks, plates, and open air get nothing. The rail appears within a second of placing or removing a piece, and it runs the same way as the belt.
+The End / Slope / Flat pieces are optional. A support block is what turns the side on. Open air beside the steps gets no rail. Forget puts the support blocks back. It updates within a second of placing or removing one.
 
 ## Power
 

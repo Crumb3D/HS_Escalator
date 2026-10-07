@@ -40,11 +40,21 @@ public static class HSEscalatorNet
         }
     }
 
+    static Type pkgType;
+
+    static Type PackageType32()
+    {
+        return typeof(NetPackageHSEscalator);
+    }
+
     public static void RegisterPackage()
     {
         try
         {
-            var t = typeof(NetPackageHSEscalator);
+            var t = HSGameVersion.Is33
+                ? HSGameApi.NetPackageType33("NetPackageHSEscalator", typeof(NetPackageHSEscalatorCore))
+                : PackageType32();
+            pkgType = t;
             var f = typeof(NetPackageManager).GetField("knownPackageTypes", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
             if (f == null) return;
             var dict = f.GetValue(null) as IDictionary;
@@ -67,9 +77,10 @@ public static class HSEscalatorNet
         }
     }
 
-    static NetPackageHSEscalator Pkg()
+    static NetPackageHSEscalatorCore Pkg()
     {
-        return NetPackageManager.GetPackage<NetPackageHSEscalator>();
+        if (pkgType == null) RegisterPackage();
+        return (NetPackageHSEscalatorCore)HSGameApi.GetNetPackage(pkgType);
     }
 
     static void ToServer(NetPackage pkg)
@@ -188,21 +199,21 @@ public static class HSEscalatorNet
     }
 }
 
-public class NetPackageHSEscalator : NetPackage
+public abstract class NetPackageHSEscalatorCore : NetPackage
 {
-    byte kind;
-    string text;
-    string arg;
-    string id;
-    int direction;
-    float phase;
-    bool running;
-    bool hasPos;
-    Vector3i pos;
+    protected byte kind;
+    protected string text;
+    protected string arg;
+    protected string id;
+    protected int direction;
+    protected float phase;
+    protected bool running;
+    protected bool hasPos;
+    protected Vector3i pos;
 
     public override NetPackageDirection PackageDirection { get { return NetPackageDirection.Both; } }
 
-    public NetPackageHSEscalator SetupCmd(byte k, string t, string a, string i, int dir, float ph, bool run, bool has, Vector3i p)
+    public NetPackageHSEscalatorCore SetupCmd(byte k, string t, string a, string i, int dir, float ph, bool run, bool has, Vector3i p)
     {
         kind = k;
         text = t ?? "";
@@ -287,6 +298,10 @@ public class NetPackageHSEscalator : NetPackage
         }
     }
 
+}
+
+public sealed class NetPackageHSEscalator : NetPackageHSEscalatorCore
+{
     public override int GetLength()
     {
         return 48 + (text != null ? text.Length : 0) + (id != null ? id.Length : 0);

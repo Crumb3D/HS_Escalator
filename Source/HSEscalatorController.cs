@@ -18,7 +18,9 @@ public class HSEscalatorController : MonoBehaviour
     float nextObstruction;
     float nextState;
     float nextRail;
+    float nextHide;
     float jogUntil;
+    float occupiedUntil;
     bool beltReady;
 
     static HSEscalatorConfigData D { get { return HSEscalatorConfig.Data; } }
@@ -200,7 +202,14 @@ public class HSEscalatorController : MonoBehaviour
         if (Bound.Captured && Bound.HasDeck)
         {
             if (HSEscalatorNet.IsAuthority)
+            {
                 HSEscalatorWorld.EnsureCapturedRemoved(world, Bound);
+                if (Time.unscaledTime >= nextHide)
+                {
+                    nextHide = Time.unscaledTime + 1f;
+                    HSEscalatorWorld.HideSupports(world, Bound);
+                }
+            }
             if (!belt.IsBuilt)
             {
                 belt.Rebuild(world);
@@ -239,7 +248,7 @@ public class HSEscalatorController : MonoBehaviour
             AdvancePhase(Time.deltaTime);
         }
 
-        if (!GameManager.IsDedicatedServer && belt.IsBuilt && Time.unscaledTime >= nextRail)
+        if (belt.IsBuilt && Time.unscaledTime >= nextRail)
         {
             nextRail = Time.unscaledTime + 1f;
             belt.RefreshRails(world);
@@ -272,10 +281,14 @@ public class HSEscalatorController : MonoBehaviour
             Bound.Running = false;
             return;
         }
-        if (Bound.RunWhenOccupied && !SomeoneOnBelt(world))
+        if (Bound.RunWhenOccupied)
         {
-            Bound.Running = false;
-            return;
+            if (SomeoneOnBelt(world)) occupiedUntil = Time.unscaledTime + 0.75f;
+            if (Time.unscaledTime > occupiedUntil)
+            {
+                Bound.Running = false;
+                return;
+            }
         }
         if (!Bound.Running && string.IsNullOrEmpty(Bound.StopReason))
             Bound.Running = true;
@@ -297,9 +310,7 @@ public class HSEscalatorController : MonoBehaviour
             for (int i = 0; i < locals.Count; i++)
             {
                 var p = locals[i] as Entity;
-                HSEscalatorSlotPose pose;
-                Vector3 delta;
-                if (p != null && belt.StepUnder(p.position, out pose, out delta)) return true;
+                if (p != null && OnRidingSurface(p.position)) return true;
             }
         }
         riders.Clear();
@@ -319,11 +330,15 @@ public class HSEscalatorController : MonoBehaviour
         {
             var e = riders[i];
             if (e == null || e is EntityFallingBlock) continue;
-            HSEscalatorSlotPose pose;
-            Vector3 delta;
-            if (belt.StepUnder(e.position, out pose, out delta)) return true;
+            if (OnRidingSurface(e.position)) return true;
         }
         return false;
+    }
+
+    bool OnRidingSurface(Vector3 feet)
+    {
+        var path = Bound != null ? Bound.ToPath() : null;
+        return path != null && path.OnRidingSurface(feet);
     }
 
     void TickObstruction(World world)

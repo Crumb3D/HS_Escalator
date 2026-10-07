@@ -13,6 +13,17 @@ public class HSEscalatorStepCell
     public long[] Tex;
 }
 
+public class HSEscalatorSupportCell
+{
+    public int X;
+    public int Y;
+    public int Z;
+    public uint Raw;
+    public int Damage;
+    public sbyte Density;
+    public long[] Tex;
+}
+
 public class HSEscalatorConfigData
 {
     public string EscalatorId = "esc1";
@@ -48,6 +59,7 @@ public class HSEscalatorConfigData
     public bool Debug;
 
     public List<HSEscalatorStepCell> Steps = new List<HSEscalatorStepCell>();
+    public List<HSEscalatorSupportCell> Supports = new List<HSEscalatorSupportCell>();
 
     [JsonIgnore]
     public Vector3i DrivePos { get { return new Vector3i(DriveX, DriveY, DriveZ); } }
@@ -279,6 +291,7 @@ public static class HSEscalatorConfig
     {
         if (d == null) return;
         if (d.Steps == null) d.Steps = new List<HSEscalatorStepCell>();
+        if (d.Supports == null) d.Supports = new List<HSEscalatorSupportCell>();
         if (string.IsNullOrEmpty(d.EscalatorId)) d.EscalatorId = "esc1";
         if (d.Speed < 0.15f || d.Speed > 4f) d.Speed = 0.6f;
         if (d.Direction != -1 && d.Direction != 1) d.Direction = 1;

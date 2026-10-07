@@ -10,6 +10,8 @@ public class HSEscalatorMod : IModApi
 
     public void InitMod(Mod _modInstance)
     {
+        if (!HSGameVersion.AllowLoad("[HSEscalator]"))
+            return;
         ModPath = _modInstance.Path;
         try
         {

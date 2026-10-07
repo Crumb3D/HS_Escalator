@@ -23,6 +23,8 @@ public class HSEscalatorBelt
     readonly List<Vector3> combWorld = new List<Vector3>();
     readonly List<Transform> walkFloors = new List<Transform>();
     readonly List<Vector3> walkWorld = new List<Vector3>();
+    readonly List<Transform> sideSolids = new List<Transform>();
+    readonly List<Vector3> sideWorld = new List<Vector3>();
     readonly HSEscalatorRail rails = new HSEscalatorRail();
     HSEscalatorConfigData bound;
     HSEscalatorPath path;
@@ -38,11 +40,15 @@ public class HSEscalatorBelt
 
     public void RefreshRails(World world)
     {
-        if (GameManager.IsDedicatedServer || Root == null || path == null) return;
+        if (Root == null || path == null) return;
         int sig = HSEscalatorRail.LayoutSig(world, path);
         if (sig == railSig) return;
-        rails.Build(world, path, Root.transform);
-        rails.Apply(bound != null ? bound.Phase : 0f);
+        if (!GameManager.IsDedicatedServer)
+        {
+            rails.Build(world, path, Root.transform);
+            rails.Apply(bound != null ? bound.Phase : 0f);
+        }
+        RebuildSideSolids(world);
         railSig = sig;
     }
 
@@ -58,6 +64,8 @@ public class HSEscalatorBelt
             erb.useGravity = false;
             BuildCombPlates(null);
             BuildWalkFloor();
+            RebuildSideSolids(world);
+            railSig = HSEscalatorRail.LayoutSig(world, path);
             Apply(bound.Phase, 0f);
             RefreshPathGraph();
             return;
@@ -84,6 +92,7 @@ public class HSEscalatorBelt
         BuildCombPlates(pin);
         BuildWalkFloor();
         rails.Build(world, path, Root.transform);
+        RebuildSideSolids(world);
         railSig = HSEscalatorRail.LayoutSig(world, path);
         Apply(bound.Phase, 0f);
         RefreshPathGraph();
@@ -108,7 +117,7 @@ public class HSEscalatorBelt
                     path.WorldXZ(srcCol, cell.Lane, out x, out z);
                     int y = HSEscalatorPath.BlockYFromHeight(path.Heights[srcCol]);
                     var worldPos = new Vector3(x, y, z);
-                    var model = ic.CloneModel(world, bv.ToItemValue(), worldPos, holder.transform, _textureFullArray: HSEscalatorWorld.FromLongs(cell.Tex));
+                    var model = HSGameApi.CloneBlockModel(ic, world, bv, worldPos, holder.transform, HSEscalatorWorld.FromLongs(cell.Tex));
                     if (model != null)
                     {
                         model.localPosition = new Vector3(0f, 0.25f, 0f);
@@ -227,6 +236,28 @@ public class HSEscalatorBelt
         }
     }
 
+    void RebuildSideSolids(World world)
+    {
+        for (int i = 0; i < sideSolids.Count; i++)
+            if (sideSolids[i] != null) UnityEngine.Object.Destroy(sideSolids[i].gameObject);
+        sideSolids.Clear();
+        sideWorld.Clear();
+        if (world == null || path == null || Root == null) return;
+        for (int side = 0; side < 2; side++)
+        for (int c = 0; c < path.Length; c++)
+        {
+            if (!HSEscalatorRail.HasSide(world, path, c, side)) continue;
+            Vector3 center, size;
+            if (!HSEscalatorRail.BalustradeBox(path, c, side, out center, out size)) continue;
+            var go = new GameObject("side");
+            go.layer = 16;
+            go.transform.SetParent(Root.transform, false);
+            go.AddComponent<BoxCollider>().size = size;
+            sideSolids.Add(go.transform);
+            sideWorld.Add(center);
+        }
+    }
+
     void RefreshPathGraph()
     {
         var astar = AstarManager.Instance;
@@ -273,6 +304,8 @@ public class HSEscalatorBelt
             if (combs[i] != null) combs[i].position = combWorld[i] - Origin.position;
         for (int i = 0; i < walkFloors.Count && i < walkWorld.Count; i++)
             if (walkFloors[i] != null) walkFloors[i].position = walkWorld[i] - Origin.position;
+        for (int i = 0; i < sideSolids.Count && i < sideWorld.Count; i++)
+            if (sideSolids[i] != null) sideSolids[i].position = sideWorld[i] - Origin.position;
         rails.Apply(phase);
         int n = path.SlotCount;
         for (int i = 0; i < slots.Count && i < n; i++)
@@ -392,6 +425,8 @@ public class HSEscalatorBelt
         RefreshPathGraph();
         walkFloors.Clear();
         walkWorld.Clear();
+        sideSolids.Clear();
+        sideWorld.Clear();
         rails.Clear();
         railSig = int.MinValue;
         if (Root != null) UnityEngine.Object.Destroy(Root);
