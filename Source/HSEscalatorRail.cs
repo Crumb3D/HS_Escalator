@@ -16,7 +16,7 @@ public class HSEscalatorRail
     const float Repeat = 2f;
     const float SkirtHigh = 0.28f;
 
-    enum Kind { None, Wall, Piece, End }
+    enum Kind { None, Wall, Piece, End, Drive }
 
     readonly List<Transform> strips = new List<Transform>();
     readonly List<Mesh> meshes = new List<Mesh>();
@@ -201,8 +201,8 @@ public class HSEscalatorRail
         SpawnSide(glass, glassSides, root, shader);
         if (glow != null) Spawn(glow, Solid(shader, new Color(0.15f, 0.9f, 0.38f)), root);
 
-        bool full = a == 0 && b == path.Length - 1 && path.Length >= 2;
-        if (full)
+        // A gap used to drop both end loops. Close the rubber and the glass on this run either way.
+        if (rail.Count >= 2)
         {
             var high = new List<Vector3>();
             high.Add(rail[rail.Count - 1]);
@@ -400,6 +400,7 @@ public class HSEscalatorRail
             var k = Look(world, x, y + dy, z);
             if (k == Kind.End || k == Kind.Piece) return k;
             if (k == Kind.Wall) best = Kind.Wall;
+            else if (k == Kind.Drive && best == Kind.None) best = Kind.Drive;
         }
         return best;
     }
@@ -465,6 +466,7 @@ public class HSEscalatorRail
         if (bv.isair || bv.Block == null) return Kind.None;
         var name = bv.Block.GetBlockName() ?? "";
         if (name == "hsescalatorHide") return Kind.Wall;
+        if (name == "hsescalatorDrive") return Kind.Drive;
         if (name.StartsWith("hsescalatorEnd", StringComparison.Ordinal)) return Kind.End;
         if (name.StartsWith("hsescalatorSlope", StringComparison.Ordinal)
             || name.StartsWith("hsescalatorFlat", StringComparison.Ordinal))
