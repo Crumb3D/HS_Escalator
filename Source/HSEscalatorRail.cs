@@ -92,6 +92,7 @@ public class HSEscalatorRail
             : new Vector3(0f, 0f, path.RunSign);
 
         BuildUnderside(path, root, shader);
+        BuildEndCaps(path, root, shader, along);
 
         int sides = 0;
         for (int side = 0; side < 2; side++)
@@ -148,7 +149,89 @@ public class HSEscalatorRail
         }
         var mesh = Deck(left, right);
         if (mesh == null) return;
-        SpawnGlass(mesh, new Color(0.55f, 0.72f, 0.82f, 0.16f), root, shader);
+        SpawnGlass(mesh, GlassColor, root, shader);
+    }
+
+    void BuildEndCaps(HSEscalatorPath path, Transform root, Shader shader, Vector3 along)
+    {
+        if (path.Length < 2) return;
+        SpawnGlass(EndCap(path, 0, -along), GlassColor, root, shader);
+        SpawnGlass(EndCap(path, path.Length - 1, along), GlassColor, root, shader);
+    }
+
+    static Mesh EndCap(HSEscalatorPath path, int col, Vector3 runOut)
+    {
+        if (runOut.sqrMagnitude < 0.5f) runOut = Vector3.forward;
+        runOut.Normalize();
+        float tread = path.BeltHeight(col) * 0.5f;
+        float floorY = tread - SideBelow - 0.01f;
+        float clipY = tread - 0.51f;
+        if (clipY <= floorY + 0.05f) return null;
+
+        int bx, bz;
+        path.WorldXZ(col, 0, out bx, out bz);
+        var face = new Vector3(bx + 0.5f, 0f, bz + 0.5f) + runOut * 0.5f;
+        var top = new Vector3(face.x, tread + AboveTread + 0.02f, face.z);
+        var raw = new List<Vector3>();
+        raw.Add(top);
+        WrapEnd(raw, top, runOut, floorY);
+
+        var kept = new List<Vector3>();
+        kept.Add(new Vector3(face.x, clipY, face.z));
+        for (int i = 1; i < raw.Count; i++)
+        {
+            var p0 = raw[i - 1];
+            var p1 = raw[i];
+            if (p0.y > clipY && p1.y <= clipY)
+            {
+                float span = p1.y - p0.y;
+                float u = span == 0f ? 0f : (clipY - p0.y) / span;
+                kept.Add(Vector3.Lerp(p0, p1, u));
+            }
+            if (p1.y <= clipY) kept.Add(p1);
+        }
+        if (kept.Count < 2) return null;
+        var tail = kept[kept.Count - 1];
+        tail -= runOut * 0.03f;
+        kept[kept.Count - 1] = tail;
+
+        float x0, z0, x1, z1;
+        Boundary(path, col, 0, out x0, out z0);
+        Boundary(path, col, 1, out x1, out z1);
+        var left = new Vector3(x0, 0f, z0) + runOut * 0.5f;
+        var right = new Vector3(x1, 0f, z1) + runOut * 0.5f;
+        var across = right - left;
+        across.y = 0f;
+        if (across.sqrMagnitude > 0.01f)
+        {
+            var n = across.normalized;
+            left -= n * 0.03f;
+            right += n * 0.03f;
+        }
+
+        var verts = new List<Vector3>();
+        var tris = new List<int>();
+        for (int i = 0; i < kept.Count; i++)
+        {
+            var d = new Vector3(kept[i].x - face.x, 0f, kept[i].z - face.z);
+            verts.Add(left + d + Vector3.up * kept[i].y);
+            verts.Add(right + d + Vector3.up * kept[i].y);
+        }
+        for (int i = 0; i < kept.Count - 1; i++)
+        {
+            int a = i * 2;
+            int b = a + 2;
+            tris.Add(a); tris.Add(a + 1); tris.Add(b + 1);
+            tris.Add(a); tris.Add(b + 1); tris.Add(b);
+            tris.Add(a); tris.Add(b); tris.Add(b + 1);
+            tris.Add(a); tris.Add(b + 1); tris.Add(a + 1);
+        }
+        var mesh = new Mesh { name = "hs_escalator_cap" };
+        mesh.SetVertices(verts);
+        mesh.SetTriangles(tris, 0);
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+        return mesh;
     }
 
     void BuildSide(HSEscalatorPath path, Transform root, Shader shader, int a, int b, Vector3 along, Vector3 outward, bool glassSides)
