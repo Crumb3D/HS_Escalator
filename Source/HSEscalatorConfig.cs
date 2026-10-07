@@ -54,12 +54,19 @@ public class HSEscalatorConfigData
     public bool Running;
     public bool WantedOn = true;
     public bool RunWhenOccupied;
+    public string Side = "glass";
     public float Phase;
     public string StopReason;
     public bool Debug;
 
     public List<HSEscalatorStepCell> Steps = new List<HSEscalatorStepCell>();
     public List<HSEscalatorSupportCell> Supports = new List<HSEscalatorSupportCell>();
+
+    [JsonIgnore]
+    public bool SideGlass
+    {
+        get { return !string.Equals(Side, "metal", StringComparison.OrdinalIgnoreCase); }
+    }
 
     [JsonIgnore]
     public Vector3i DrivePos { get { return new Vector3i(DriveX, DriveY, DriveZ); } }
@@ -297,6 +304,7 @@ public static class HSEscalatorConfig
         if (d.Direction != -1 && d.Direction != 1) d.Direction = 1;
         if (d.Width < 1) d.Width = 1;
         if (d.RunSign == 0) d.RunSign = 1;
+        d.Side = string.Equals(d.Side, "metal", StringComparison.OrdinalIgnoreCase) ? "metal" : "glass";
         if (d.Heights != null && d.Heights.Length != d.Length) d.HasDeck = false;
         if (d.HasDeck && !d.Captured && d.Steps != null && d.Steps.Count > 0)
             d.Captured = true;

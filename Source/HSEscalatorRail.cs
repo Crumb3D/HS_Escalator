@@ -69,7 +69,7 @@ public class HSEscalatorRail
         }
     }
 
-    public void Build(World world, HSEscalatorPath path, Transform root)
+    public void Build(World world, HSEscalatorPath path, Transform root, bool glassSides)
     {
         Clear();
         if (world == null || path == null || root == null || path.Heights == null || path.Length < 1) return;
@@ -110,7 +110,7 @@ public class HSEscalatorRail
                 }
                 if (start >= 0)
                 {
-                    BuildSide(path, root, shader, start, c - 1, along, outward);
+                    BuildSide(path, root, shader, start, c - 1, along, outward, glassSides);
                     start = -1;
                 }
             }
@@ -139,7 +139,7 @@ public class HSEscalatorRail
         SpawnGlass(mesh, new Color(0.72f, 0.86f, 0.92f, 0.35f), root, shader);
     }
 
-    void BuildSide(HSEscalatorPath path, Transform root, Shader shader, int a, int b, Vector3 along, Vector3 outward)
+    void BuildSide(HSEscalatorPath path, Transform root, Shader shader, int a, int b, Vector3 along, Vector3 outward, bool glassSides)
     {
         var skirtLo = new List<Vector3>();
         var skirtHi = new List<Vector3>();
@@ -175,8 +175,8 @@ public class HSEscalatorRail
         var skirt = Panel(skirtLo, skirtHi, outward, 0.03f);
         var glass = Panel(glassLo, glassHi, outward, 0.018f);
         var glow = Panel(glowLo, glowHi, outward, 0.012f);
-        if (skirt != null) Spawn(skirt, Solid(shader, new Color(0.16f, 0.17f, 0.18f)), root);
-        if (glass != null) SpawnGlass(glass, new Color(0.75f, 0.88f, 0.95f, 0.32f), root, shader);
+        SpawnSide(skirt, glassSides, root, shader);
+        SpawnSide(glass, glassSides, root, shader);
         if (glow != null) Spawn(glow, Solid(shader, new Color(0.15f, 0.9f, 0.38f)), root);
 
         bool full = a == 0 && b == path.Length - 1 && path.Length >= 2;
@@ -188,8 +188,8 @@ public class HSEscalatorRail
             for (int c = b; c >= a; c--) rail.Add(ReturnPoint(path, c, outward));
             var low = Arc(lowTop, -along, true);
             for (int i = 1; i < low.Count; i++) rail.Add(low[i]);
-            Spawn(NewelPlate(high, outward), Solid(shader, new Color(0.08f, 0.08f, 0.09f)), root);
-            Spawn(NewelPlate(low, outward), Solid(shader, new Color(0.08f, 0.08f, 0.09f)), root);
+            SpawnSide(NewelPlate(high, outward), glassSides, root, shader);
+            SpawnSide(NewelPlate(low, outward), glassSides, root, shader);
         }
 
         var tube = Tube(rail, outward);
@@ -410,6 +410,16 @@ public class HSEscalatorRail
         var m = new Material(shader) { hideFlags = HideFlags.DontUnloadUnusedAsset, color = color };
         mats.Add(m);
         return m;
+    }
+
+    static readonly Color GlassColor = new Color(0.75f, 0.88f, 0.95f, 0.32f);
+    static readonly Color MetalColor = new Color(0.16f, 0.17f, 0.18f);
+
+    void SpawnSide(Mesh mesh, bool glass, Transform root, Shader shader)
+    {
+        if (mesh == null) return;
+        if (glass) SpawnGlass(mesh, GlassColor, root, shader);
+        else Spawn(mesh, Solid(shader, MetalColor), root);
     }
 
     void SpawnGlass(Mesh mesh, Color color, Transform root, Shader fallback)

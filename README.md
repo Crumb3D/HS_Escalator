@@ -48,10 +48,11 @@ If the deck is wrong, the tool names the cell. It does not guess a different slo
 
 Put any block in the cell beside the steps — a sheet, a plate, or a full cube. That block is only there to hold the escalator up. After you set both ends, the mod remembers it and hides it. The hidden block does not stop you, and zombies cannot break it. You bump the escalator side, and you can walk under the steps. The side is drawn on the step edge:
 
-- A dark metal side from under the returning steps up over the top steps
-- A clear glass panel above that
-- A rubber rail on the step side of the glass
+- The side, from under the returning steps up to the handrail. Glass by default, or metal
+- A rubber rail on the step side
 - A glass sheet closing the bottom, so the return shows through
+
+On each escalator in the world save's `HSEscalator.json`, `"Side": "glass"` or `"Side": "metal"`. Missing means glass. Restart the server after editing it.
 
 The rubber runs with the belt. At each end it curves around and comes back underneath, the same loop as the steps.
 

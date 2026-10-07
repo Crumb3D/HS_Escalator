@@ -38,14 +38,23 @@ public class HSEscalatorBelt
 
     public bool IsBuilt { get { return Root != null; } }
 
+    bool GlassSides { get { return bound == null || bound.SideGlass; } }
+
+    int RailSig(World world)
+    {
+        int sig = HSEscalatorRail.LayoutSig(world, path);
+        if (GlassSides) sig ^= 0x51A7E;
+        return sig;
+    }
+
     public void RefreshRails(World world)
     {
         if (Root == null || path == null) return;
-        int sig = HSEscalatorRail.LayoutSig(world, path);
+        int sig = RailSig(world);
         if (sig == railSig) return;
         if (!GameManager.IsDedicatedServer)
         {
-            rails.Build(world, path, Root.transform);
+            rails.Build(world, path, Root.transform, GlassSides);
             rails.Apply(bound != null ? bound.Phase : 0f);
         }
         RebuildSideSolids(world);
@@ -65,7 +74,7 @@ public class HSEscalatorBelt
             BuildCombPlates(null);
             BuildWalkFloor();
             RebuildSideSolids(world);
-            railSig = HSEscalatorRail.LayoutSig(world, path);
+            railSig = RailSig(world);
             Apply(bound.Phase, 0f);
             RefreshPathGraph();
             return;
@@ -91,9 +100,9 @@ public class HSEscalatorBelt
         }
         BuildCombPlates(pin);
         BuildWalkFloor();
-        rails.Build(world, path, Root.transform);
+        rails.Build(world, path, Root.transform, GlassSides);
         RebuildSideSolids(world);
-        railSig = HSEscalatorRail.LayoutSig(world, path);
+        railSig = RailSig(world);
         Apply(bound.Phase, 0f);
         RefreshPathGraph();
         HSEscalatorDebug.Verbose("Belt " + bound.EscalatorId + ": " + n + " slots from " + bound.Steps.Count + " cells");
