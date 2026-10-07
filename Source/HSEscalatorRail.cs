@@ -138,7 +138,7 @@ public class HSEscalatorRail
         }
         var mesh = Deck(left, right);
         if (mesh == null) return;
-        SpawnGlass(mesh, new Color(0.72f, 0.86f, 0.92f, 0.35f), root, shader);
+        SpawnGlass(mesh, new Color(0.55f, 0.72f, 0.82f, 0.16f), root, shader);
     }
 
     void BuildSide(HSEscalatorPath path, Transform root, Shader shader, int a, int b, Vector3 along, Vector3 outward, bool glassSides)
@@ -433,7 +433,7 @@ public class HSEscalatorRail
         return m;
     }
 
-    static readonly Color GlassColor = new Color(0.75f, 0.88f, 0.95f, 0.32f);
+    static readonly Color GlassColor = new Color(0.55f, 0.72f, 0.82f, 0.16f);
     static readonly Color MetalColor = new Color(0.16f, 0.17f, 0.18f);
 
     void SpawnSide(Mesh mesh, bool glass, Transform root, Shader shader)
