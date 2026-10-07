@@ -42,6 +42,7 @@
 			<property name="Material" value="Msteel" />
 			<property name="Shape" value="Invisible" />
 			<property name="StabilitySupport" value="true" />
+			<property name="StabilityFull" value="true" />
 			<property name="ImposterExclude" value="true" />
 			<property name="ImposterDontBlock" value="true" />
 			<property name="WaterFlow" value="permitted" />

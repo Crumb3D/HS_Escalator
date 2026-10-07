@@ -415,33 +415,56 @@ public static class HSEscalatorWorld
             int x, y, z;
             HSEscalatorRail.SideCell(path, c, side, out x, out y, out z);
             for (int dy = -1; dy <= 2; dy++)
+                CaptureSupport(world, d, hide, changes, x, y + dy, z);
+            // The wall keeps going down. Hide that too, or breaking it drops the side.
+            for (int by = y - 2; by >= 0 && y - by <= 64; by--)
             {
-                int by = y + dy;
-                if (by < 0 || by > 255) continue;
-                var pos = new Vector3i(x, by, z);
-                var chunk = world.GetChunkFromWorldPos(pos) as Chunk;
-                if (chunk == null) continue;
-                var bv = world.GetBlock(pos);
-                if (bv.type == hide.type || bv.ischild) continue;
-                if (!HSEscalatorRail.IsSupport(world, x, by, z)) continue;
-                int lx = World.toBlockXZ(pos.x), ly = World.toBlockY(pos.y), lz = World.toBlockXZ(pos.z);
-                var saved = FindSupport(d, x, by, z);
-                if (saved == null)
-                {
-                    saved = new HSEscalatorSupportCell { X = x, Y = by, Z = z };
-                    d.Supports.Add(saved);
-                }
-                saved.Raw = bv.rawData;
-                saved.Damage = bv.damage;
-                saved.Density = chunk.GetDensity(lx, ly, lz);
-                saved.Tex = ToLongs(chunk.GetTextureFullArray(lx, ly, lz));
-                changes.Add(new BlockChangeInfo(pos, hide, saved.Density));
+                if (!CaptureSupport(world, d, hide, changes, x, by, z)) break;
             }
+            for (int by = y + 3; by <= 255 && by - y <= 16; by++)
+            {
+                if (!CaptureSupport(world, d, hide, changes, x, by, z)) break;
+            }
+        }
+        for (int i = 0; i < d.Supports.Count; i++)
+        {
+            var s = d.Supports[i];
+            if (s == null) continue;
+            var pos = new Vector3i(s.X, s.Y, s.Z);
+            if (world.GetChunkFromWorldPos(pos) == null) continue;
+            var bv = world.GetBlock(pos);
+            if (!bv.isair) continue;
+            changes.Add(new BlockChangeInfo(pos, hide, s.Density));
         }
         if (changes.Count == 0) return;
         world.SetBlocksRPC(changes);
         HSEscalatorConfig.Save();
         HSEscalatorDebug.Info("Hid " + changes.Count + " support block(s) for " + d.EscalatorId);
+    }
+
+    // True when this cell is already hidden or was just hidden, so the walk can keep going.
+    static bool CaptureSupport(World world, HSEscalatorConfigData d, BlockValue hide, List<BlockChangeInfo> changes, int x, int y, int z)
+    {
+        if (y < 0 || y > 255) return false;
+        var pos = new Vector3i(x, y, z);
+        var chunk = world.GetChunkFromWorldPos(pos) as Chunk;
+        if (chunk == null) return false;
+        var bv = world.GetBlock(pos);
+        if (bv.type == hide.type || bv.ischild) return true;
+        if (bv.isair || !HSEscalatorRail.IsSupport(world, x, y, z)) return false;
+        int lx = World.toBlockXZ(pos.x), ly = World.toBlockY(pos.y), lz = World.toBlockXZ(pos.z);
+        var saved = FindSupport(d, x, y, z);
+        if (saved == null)
+        {
+            saved = new HSEscalatorSupportCell { X = x, Y = y, Z = z };
+            d.Supports.Add(saved);
+        }
+        saved.Raw = bv.rawData;
+        saved.Damage = bv.damage;
+        saved.Density = chunk.GetDensity(lx, ly, lz);
+        saved.Tex = ToLongs(chunk.GetTextureFullArray(lx, ly, lz));
+        changes.Add(new BlockChangeInfo(pos, hide, saved.Density));
+        return true;
     }
 
     static void RestoreSupports(World world, HSEscalatorConfigData d, bool clear)
