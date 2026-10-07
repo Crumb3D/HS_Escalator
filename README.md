@@ -54,7 +54,7 @@ Put any block in the cell beside the steps — a sheet, a plate, or a full cube.
 
 On each escalator in the world save's `HSEscalator.json`, `"Side": "glass"` or `"Side": "metal"`. Missing means glass. Restart the server after editing it.
 
-The rubber runs with the belt. At each end it curves around and comes back underneath, the same loop as the steps.
+The rubber runs with the belt. At each end it curves around the side and comes back just above the glass floor.
 
 The End / Slope / Flat pieces are optional. A support block is what turns the side on. Open air beside the steps gets no rail. Forget puts the support blocks back. It updates within a second of placing or removing one.
 

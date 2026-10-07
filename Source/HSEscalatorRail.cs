@@ -10,7 +10,9 @@ public class HSEscalatorRail
 {
     const float AboveTread = 0.90f;
     const float ReturnDrop = 1f;
-    const float NewelR = 0.5f;
+    const float SideBelow = ReturnDrop + 0.55f;
+    const float RailAboveFloor = 0.12f;
+    const float NewelR = 0.42f;
     const float Repeat = 2f;
     const float SkirtHigh = 0.28f;
 
@@ -127,7 +129,7 @@ public class HSEscalatorRail
         var right = new List<Vector3>();
         for (int c = 0; c < path.Length; c++)
         {
-            float y = path.BeltHeight(c) * 0.5f - ReturnDrop - 0.56f;
+            float y = path.BeltHeight(c) * 0.5f - SideBelow - 0.01f;
             float x0, z0, x1, z1;
             Boundary(path, c, 0, out x0, out z0);
             Boundary(path, c, 1, out x1, out z1);
@@ -182,12 +184,15 @@ public class HSEscalatorRail
         bool full = a == 0 && b == path.Length - 1 && path.Length >= 2;
         if (full)
         {
-            var high = Arc(rail[rail.Count - 1], along, false);
-            var lowTop = rail[0];
+            var high = new List<Vector3>();
+            high.Add(rail[rail.Count - 1]);
+            WrapEnd(high, rail[rail.Count - 1], along, ReturnRailY(path, b));
             for (int i = 1; i < high.Count; i++) rail.Add(high[i]);
-            for (int c = b; c >= a; c--) rail.Add(ReturnPoint(path, c, outward));
-            var low = Arc(lowTop, -along, true);
-            for (int i = 1; i < low.Count; i++) rail.Add(low[i]);
+            for (int c = b - 1; c >= a; c--) rail.Add(ReturnPoint(path, c, outward));
+            var low = new List<Vector3>();
+            low.Add(rail[0]);
+            WrapEnd(low, rail[0], -along, ReturnRailY(path, a));
+            for (int i = low.Count - 1; i >= 0; i--) rail.Add(low[i]);
             SpawnSide(NewelPlate(high, outward), glassSides, root, shader);
             SpawnSide(NewelPlate(low, outward), glassSides, root, shader);
         }
@@ -216,7 +221,7 @@ public class HSEscalatorRail
         var wall = edge + outward * 0.02f;
         var hand = edge - outward * 0.05f;
         // From under the returning steps up to the balustrade, so both step runs are covered.
-        skirtLo.Add(new Vector3(wall.x, tread - ReturnDrop - 0.55f, wall.z));
+        skirtLo.Add(new Vector3(wall.x, tread - SideBelow, wall.z));
         skirtHi.Add(new Vector3(wall.x, tread + SkirtHigh, wall.z));
         glassLo.Add(new Vector3(wall.x, tread + SkirtHigh - 0.02f, wall.z));
         glassHi.Add(new Vector3(wall.x, tread + AboveTread - 0.03f, wall.z));
@@ -234,29 +239,45 @@ public class HSEscalatorRail
         pts.Add(p + along * 0.45f);
     }
 
+    static float ReturnRailY(HSEscalatorPath path, int c)
+    {
+        return path.BeltHeight(c) * 0.5f - SideBelow + RailAboveFloor;
+    }
+
     static Vector3 ReturnPoint(HSEscalatorPath path, int c, Vector3 outward)
     {
         float x, z;
         Boundary(path, c, outward, out x, out z);
         var hand = new Vector3(x, 0f, z) - outward * 0.05f;
-        return new Vector3(hand.x, path.BeltHeight(c) * 0.5f + AboveTread - ReturnDrop, hand.z);
+        return new Vector3(hand.x, ReturnRailY(path, c), hand.z);
     }
 
-    static List<Vector3> Arc(Vector3 top, Vector3 runOut, bool fromReturn)
+    // Around the end like the newel, then straight down the side to the return.
+    static void WrapEnd(List<Vector3> rail, Vector3 top, Vector3 runOut, float returnY)
     {
-        var pts = new List<Vector3>();
         if (runOut.sqrMagnitude < 0.5f) runOut = Vector3.forward;
         runOut.Normalize();
-        var hub = top;
-        hub.y -= NewelR;
-        int n = 12;
-        for (int i = 0; i <= n; i++)
+        float drop = top.y - returnY;
+        float r = NewelR;
+        if (drop < r * 2f + 0.04f) r = Math.Max(0.12f, (drop - 0.04f) * 0.5f);
+        int n = 8;
+        var hubTop = top;
+        hubTop.y -= r;
+        for (int i = 1; i <= n; i++)
         {
-            int k = fromReturn ? n - i : i;
-            float a = Mathf.PI * k / n;
-            pts.Add(hub + runOut * (Mathf.Sin(a) * NewelR) + Vector3.up * (Mathf.Cos(a) * NewelR));
+            float ang = (Mathf.PI * 0.5f) * i / n;
+            rail.Add(hubTop + runOut * (Mathf.Sin(ang) * r) + Vector3.up * (Mathf.Cos(ang) * r));
         }
-        return pts;
+        var outer = rail[rail.Count - 1];
+        float bend = returnY + r;
+        if (outer.y > bend + 0.02f)
+            rail.Add(new Vector3(outer.x, bend, outer.z));
+        var hubBot = new Vector3(top.x, returnY + r, top.z);
+        for (int i = 1; i <= n; i++)
+        {
+            float ang = Mathf.PI * 0.5f + (Mathf.PI * 0.5f) * i / n;
+            rail.Add(hubBot + runOut * (Mathf.Sin(ang) * r) + Vector3.up * (Mathf.Cos(ang) * r));
+        }
     }
 
     static Mesh NewelPlate(List<Vector3> arc, Vector3 side)
@@ -615,9 +636,19 @@ public class HSEscalatorRail
             AddQuad(tris, verts, ref t, a, a + 3, b + 3, b, side);
             AddQuad(tris, verts, ref t, a + 1, a + 2, b + 2, b + 1, -side);
         }
-        AddQuad(tris, verts, ref t, 0, 3, 2, 1, -tang[0]);
-        int e = (n - 1) * 4;
-        AddQuad(tris, verts, ref t, e, e + 1, e + 2, e + 3, tang[n - 1]);
+        bool closed = (p[0] - p[n - 1]).sqrMagnitude < 0.0004f;
+        if (!closed)
+        {
+            AddQuad(tris, verts, ref t, 0, 3, 2, 1, -tang[0]);
+            int e = (n - 1) * 4;
+            AddQuad(tris, verts, ref t, e, e + 1, e + 2, e + 3, tang[n - 1]);
+        }
+        if (t < tris.Length)
+        {
+            var cut = new int[t];
+            Array.Copy(tris, cut, t);
+            tris = cut;
+        }
 
         var mesh = new Mesh { name = "hs_escalator_rail" };
         mesh.vertices = verts;
