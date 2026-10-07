@@ -213,6 +213,8 @@ public class HSEscalatorRail
             low.Add(rail[0]);
             WrapEnd(low, rail[0], -along, ReturnRailY(path, a));
             for (int i = low.Count - 1; i >= 0; i--) rail.Add(low[i]);
+            SpawnSide(EndFill(high, outward, 0.03f), glassSides, root, shader);
+            SpawnSide(EndFill(low, outward, 0.03f), glassSides, root, shader);
         }
 
         var tube = Tube(rail, outward);
@@ -276,6 +278,63 @@ public class HSEscalatorRail
         Boundary(path, c, outward, out x, out z);
         var lip = new Vector3(x, 0f, z) + outward * 0.055f;
         return new Vector3(lip.x, ReturnRailY(path, c), lip.z);
+    }
+
+    static Mesh EndFill(List<Vector3> wrap, Vector3 outward, float halfThick)
+    {
+        if (wrap == null || wrap.Count < 3) return null;
+        if (outward.sqrMagnitude < 0.5f) outward = Vector3.forward;
+        outward.Normalize();
+        int n = wrap.Count;
+        var mid = (wrap[0] + wrap[n - 1]) * 0.5f;
+        var bulge = wrap[n / 2] - mid;
+        bulge.y = 0f;
+        var back = bulge.sqrMagnitude > 0.0001f ? bulge.normalized : Vector3.forward;
+        var onGlass = -outward * 0.035f;
+        var chordA = wrap[0] + onGlass - back * 0.06f;
+        var chordB = wrap[n - 1] + onGlass - back * 0.06f;
+        var hub = (chordA + chordB) * 0.5f;
+        var outline = new List<Vector3>();
+        outline.Add(chordA);
+        for (int i = 0; i < n; i++) outline.Add(wrap[i] + onGlass);
+        outline.Add(chordB);
+        int m = outline.Count;
+        var verts = new List<Vector3>();
+        var tris = new List<int>();
+        for (int s = -1; s <= 1; s += 2)
+        {
+            int b = verts.Count;
+            var o = outward * (halfThick * s);
+            verts.Add(hub + o);
+            for (int i = 0; i < m; i++) verts.Add(outline[i] + o);
+            for (int i = 0; i < m - 1; i++)
+            {
+                if (s > 0)
+                {
+                    tris.Add(b); tris.Add(b + i + 1); tris.Add(b + i + 2);
+                }
+                else
+                {
+                    tris.Add(b); tris.Add(b + i + 2); tris.Add(b + i + 1);
+                }
+            }
+        }
+        int shell = m + 1;
+        for (int i = 0; i < m - 1; i++)
+        {
+            int i0 = 1 + i;
+            int i1 = i0 + 1;
+            int j0 = shell + 1 + i;
+            int j1 = j0 + 1;
+            tris.Add(i0); tris.Add(j0); tris.Add(j1);
+            tris.Add(i0); tris.Add(j1); tris.Add(i1);
+        }
+        var mesh = new Mesh { name = "hs_escalator_end" };
+        mesh.SetVertices(verts);
+        mesh.SetTriangles(tris, 0);
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+        return mesh;
     }
 
     // Around the end like the newel, then straight down the side to the return.

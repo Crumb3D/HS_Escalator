@@ -1,14 +1,23 @@
 # HS Escalator
 
-You build the escalator. The mod reads the half-blocks you placed and runs them as a moving walkway or a real escalator (level treads, stair rise, fold under, return underneath).
+You build the escalator out of half-blocks. The mod takes those blocks and runs them as a moving walkway or a real escalator (level treads, stair rise, fold under, return underneath).
 
-Build the steps, then put a wall in the cell beside them. That wall is temporary support. Once the deck is captured the mod hides it and draws the escalator side in its place. Do not include the walls in the two corners.
+## How to build one
+
+1. Place the steps as **half-blocks of concrete or steel**. Do this before you set the two corners. Once the deck is captured, those blocks are taken and you cannot upgrade them.
+2. Leave the block under every step empty, and two blocks of air above every tread.
+3. Put a normal floor just outside each end, flush with the end steps.
+4. Build the side supports out of **wood** (sheet, plate, or cube) in the cell beside the steps. Wood, because some of those supports have to be destroyed afterwards. Do not put them on the two corner blocks you will mark.
+5. Place an **Escalator Panel** beside an end. A second panel at the other end is optional. Wire at least one.
+6. Setup tool: **Set End 1** and **Set End 2** on opposite corners of the step deck only, then **Register Panel**.
+
+The mod hides the wood and draws the escalator side there. The hidden supports do not stop you, and zombies cannot break them. Open air beside the steps gets no side. Forget puts the wood back.
 
 ## Blocks that move
 
-Any building material **shaped as a half-block**. When the belt runs, every tread is painted with the escalator grate. Width is whatever you build — 1 file or 20 — as long as each column is the same height across. Mark opposite corners of the **whole** deck.
+Concrete or steel **shaped as a half-block**. When the belt runs, every tread is painted with the escalator grate. Width is whatever you build — 1 file or 20 — as long as each column is the same height across. Mark opposite corners of the **whole** deck.
 
-Not steps: full cubes, wedges, ramps, plates, sheets, doors, ladders, terrain.
+Not steps: full cubes, wedges, ramps, plates, sheets, doors, ladders, terrain. Pick concrete or steel before you set the corners. You cannot upgrade a step after that.
 
 ## Default walkway
 
@@ -16,9 +25,9 @@ Not steps: full cubes, wedges, ramps, plates, sheets, doors, ladders, terrain.
 2. Leave the block **under** every step empty (return + fold).
 3. Leave **two** blocks of air above every tread.
 4. Put a normal floor just **outside** each end, flush with the end steps.
-5. Cover the sides however you want, outside the step deck.
+5. Wood supports in the cell beside the steps, not on the two corners. Some of that wood has to be destroyed afterwards.
 6. Place an **Escalator Panel** beside an end. You can put a second panel at the other end. Wire at least one.
-7. Setup tool: **Set End 1** and **Set End 2** on opposite corners of the **step deck only**, then **Register Panel** on each panel.
+7. Setup tool: **Set End 1** and **Set End 2** on opposite corners of the **step deck only**, then **Register Panel** on each panel. The steps must already be concrete or steel.
 
 ## Default escalator
 
@@ -46,7 +55,7 @@ If the deck is wrong, the tool names the cell. It does not guess a different slo
 
 ## Handrail
 
-Put any block in the cell beside the steps — a sheet, a plate, or a full cube. That block is only there to hold the escalator up. After you set both ends, the mod remembers it and hides it. The hidden block does not stop you, and zombies cannot break it. You bump the escalator side, and you can walk under the steps. The side is drawn on the step edge:
+The wood beside the steps is only there to hold the escalator up. After you set both ends, the mod hides it and draws the side on the step edge. You bump that side, and you can walk under the steps.
 
 - The side, from under the returning steps up to the handrail. Glass by default, or metal
 - A rubber rail on the step side
