@@ -4,6 +4,6 @@
   <DisplayName value="HS Escalator" />
   <Description value="Player-built escalators and moving walkways. You place the half-block steps; the setup tool marks the deck and a panel. Admin: hsescalator" />
   <Author value="Crumb" />
-  <Version value="1.0.5" />
+  <Version value="1.0.6" />
   <SkipWithAntiCheat value="true" />
 </xml>

@@ -133,6 +133,7 @@ public class HSEscalatorConfigData
         }
     }
 
+    [JsonIgnore]
     public bool IsEmpty
     {
         get { return !HasDeck && End1 == null && End2 == null && DriveCount == 0 && (Steps == null || Steps.Count == 0); }
@@ -273,9 +274,14 @@ public static class HSEscalatorConfig
             ActiveId = ActiveId,
             Debug = HSEscalatorDebug.Enabled,
             MaxDeckCells = HSEscalatorSettings.MaxDeckCells,
-            Escalators = Escalators
+            Escalators = Saved()
         };
         return JsonConvert.SerializeObject(file);
+    }
+
+    static List<HSEscalatorConfigData> Saved()
+    {
+        return Escalators.FindAll(e => e != null && !e.IsEmpty);
     }
 
     public static void ApplyFromServer(string json)
@@ -350,13 +356,15 @@ public static class HSEscalatorConfig
             }
         }
         if (ok) loadedFrom = path;
-        if (Escalators.Count == 0) Escalators.Add(new HSEscalatorConfigData());
         foreach (var d in Escalators) Normalize(d);
+        int blanks = Escalators.RemoveAll(e => e == null || e.IsEmpty);
+        if (blanks > 0) HSEscalatorDebug.Info("Dropped " + blanks + " blank escalator(s) with no ends, steps or panel");
+        if (Escalators.Count == 0) Escalators.Add(new HSEscalatorConfigData());
         Use(ById(ActiveId) ?? Escalators[0]);
         foreach (var d in Escalators)
             if (d.Debug) HSEscalatorDebug.Enabled = true;
         Save();
-        HSEscalatorDebug.Info("Config loaded: " + Escalators.Count + " escalator(s), active " + Data.EscalatorId);
+        HSEscalatorDebug.Info("Config loaded: " + Saved().Count + " escalator(s), active " + Data.EscalatorId);
     }
 
     static void Normalize(HSEscalatorConfigData d)
@@ -405,7 +413,7 @@ public static class HSEscalatorConfig
                 ActiveId = ActiveId,
                 Debug = HSEscalatorDebug.Enabled,
                 MaxDeckCells = HSEscalatorSettings.MaxDeckCells,
-                Escalators = Escalators
+                Escalators = Saved()
             };
             var path = FilePath;
             var json = JsonConvert.SerializeObject(file, Formatting.Indented);
