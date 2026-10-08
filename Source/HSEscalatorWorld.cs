@@ -408,30 +408,30 @@ public static class HSEscalatorWorld
             HSEscalatorDebug.Warn("hsescalatorHide is not loaded, support walls stay visible");
             return;
         }
-        // Never eat the floor under the side wood. Stop at the top of the bottom step.
-        int floorY = BottomStepBlockY(path);
+        // Hide from the block ABOVE the bottom step only. Same-level floor beside the step stays.
+        int hideFromY = BottomStepBlockY(path) + 1;
         var changes = new List<BlockChangeInfo>();
-        RestoreSupportsBelow(world, d, hide, changes, floorY);
+        RestoreSupportsBelow(world, d, hide, changes, hideFromY);
         for (int side = 0; side < 2; side++)
         for (int c = 0; c < path.Length; c++)
         {
             int x, y, z;
             HSEscalatorRail.SideCell(path, c, side, out x, out y, out z);
             for (int dy = 0; dy <= 2; dy++)
-                CaptureSupport(world, d, hide, changes, x, y + dy, z, floorY);
-            for (int by = y - 1; by >= floorY; by--)
+                CaptureSupport(world, d, hide, changes, x, y + dy, z, hideFromY);
+            for (int by = y - 1; by >= hideFromY; by--)
             {
-                if (!CaptureSupport(world, d, hide, changes, x, by, z, floorY)) break;
+                if (!CaptureSupport(world, d, hide, changes, x, by, z, hideFromY)) break;
             }
             for (int by = y + 3; by <= 255 && by - y <= 16; by++)
             {
-                if (!CaptureSupport(world, d, hide, changes, x, by, z, floorY)) break;
+                if (!CaptureSupport(world, d, hide, changes, x, by, z, hideFromY)) break;
             }
         }
         for (int i = 0; i < d.Supports.Count; i++)
         {
             var s = d.Supports[i];
-            if (s == null || s.Y < floorY) continue;
+            if (s == null || s.Y < hideFromY) continue;
             var pos = new Vector3i(s.X, s.Y, s.Z);
             if (world.GetChunkFromWorldPos(pos) == null) continue;
             var bv = world.GetBlock(pos);
@@ -452,14 +452,14 @@ public static class HSEscalatorWorld
         return HSEscalatorPath.BlockYFromHeight(minH);
     }
 
-    // Put back anything we hid under the bottom step (floor / lower wall).
-    static void RestoreSupportsBelow(World world, HSEscalatorConfigData d, BlockValue hide, List<BlockChangeInfo> changes, int floorY)
+    // Put back anything we hid at or below the bottom step (floor beside it).
+    static void RestoreSupportsBelow(World world, HSEscalatorConfigData d, BlockValue hide, List<BlockChangeInfo> changes, int hideFromY)
     {
         if (d.Supports == null || d.Supports.Count == 0) return;
         for (int i = d.Supports.Count - 1; i >= 0; i--)
         {
             var s = d.Supports[i];
-            if (s == null || s.Y >= floorY) continue;
+            if (s == null || s.Y >= hideFromY) continue;
             var pos = new Vector3i(s.X, s.Y, s.Z);
             if (world.GetChunkFromWorldPos(pos) != null)
             {
@@ -472,9 +472,9 @@ public static class HSEscalatorWorld
     }
 
     // True when this cell is already hidden or was just hidden, so the walk can keep going.
-    static bool CaptureSupport(World world, HSEscalatorConfigData d, BlockValue hide, List<BlockChangeInfo> changes, int x, int y, int z, int floorY)
+    static bool CaptureSupport(World world, HSEscalatorConfigData d, BlockValue hide, List<BlockChangeInfo> changes, int x, int y, int z, int hideFromY)
     {
-        if (y < floorY || y > 255) return false;
+        if (y < hideFromY || y > 255) return false;
         var pos = new Vector3i(x, y, z);
         var chunk = world.GetChunkFromWorldPos(pos) as Chunk;
         if (chunk == null) return false;
