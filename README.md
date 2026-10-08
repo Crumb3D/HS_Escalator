@@ -7,7 +7,7 @@ You build the escalator out of half-blocks. The mod takes those blocks and runs 
 1. Place the steps as **half-blocks of concrete or steel**. Do this before you set the two corners. Once the deck is captured, those blocks are taken and you cannot upgrade them.
 2. Leave the block under every step empty, and two blocks of air above every tread.
 3. Put a normal floor just outside each end, flush with the end steps.
-4. Build the side supports out of **wood** (sheet, plate, or cube) in the cell beside the steps, straight down to the ground. The mod hides that whole wall. Leave it. Breaking the wood under the hidden part drops that side, and both ends go with it. Extra wood that is not in that cell can be destroyed afterwards. Do not put the side wood on the two corner blocks you will mark, and do not put the panel in place of it.
+4. Build the side supports out of **wood** (sheet, plate, or cube) in the cell beside the steps. The mod hides that wood from the top of the bottom step upward. Floor under the wood stays — no trenches. Leave the hidden wood. Extra wood that is not in that cell can be destroyed afterwards. Do not put the side wood on the two corner blocks you will mark, and do not put the panel in place of it.
 5. Place an **Escalator Panel** beside an end. A second panel at the other end is optional. Wire at least one.
 6. Setup tool: **Set End 1** and **Set End 2** on opposite corners of the step deck only, then **Register Panel**.
 
@@ -25,7 +25,7 @@ Not steps: full cubes, wedges, ramps, plates, sheets, doors, ladders, terrain. P
 2. Leave the block **under** every step empty (return + fold).
 3. Leave **two** blocks of air above every tread.
 4. Put a normal floor just **outside** each end, flush with the end steps.
-5. Wood supports in the cell beside the steps, straight down to the ground, not on the two corners. The mod hides that whole wall. Leave it.
+5. Wood supports in the cell beside the steps, not on the two corners. The mod hides from the top of the bottom step up. Floor under that wood stays.
 6. Place an **Escalator Panel** beside an end. You can put a second panel at the other end. Wire at least one.
 7. Setup tool: **Set End 1** and **Set End 2** on opposite corners of the **step deck only**, then **Register Panel** on each panel. The steps must already be concrete or steel.
 
