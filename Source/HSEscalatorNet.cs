@@ -42,18 +42,13 @@ public static class HSEscalatorNet
 
     static Type pkgType;
 
-    static Type PackageType32()
-    {
-        return typeof(NetPackageHSEscalator);
-    }
-
     public static void RegisterPackage()
     {
         try
         {
             var t = HSGameVersion.Is33
                 ? HSGameApi.NetPackageType33("NetPackageHSEscalator", typeof(NetPackageHSEscalatorCore))
-                : PackageType32();
+                : HSGameApi.NetPackageType32("NetPackageHSEscalator", typeof(NetPackageHSEscalatorCore));
             pkgType = t;
             var f = typeof(NetPackageManager).GetField("knownPackageTypes", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
             if (f == null) return;
@@ -298,14 +293,6 @@ public abstract class NetPackageHSEscalatorCore : NetPackage
         }
     }
 
-}
-
-public sealed class NetPackageHSEscalator : NetPackageHSEscalatorCore
-{
-    public override int GetLength()
-    {
-        return 48 + (text != null ? text.Length : 0) + (id != null ? id.Length : 0);
-    }
 }
 
 [HarmonyPatch(typeof(NetPackageManager), "SetupBaseMapping")]

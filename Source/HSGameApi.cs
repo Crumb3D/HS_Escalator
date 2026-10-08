@@ -21,7 +21,18 @@ public static class HSGameApi
 
     static Transform CloneBlockModel32(ItemClass ic, World world, BlockValue bv, Vector3 worldPos, Transform parent, TextureFullArray tex)
     {
-        return ic.CloneModel(world, bv.ToItemValue(), worldPos, parent, _textureFullArray: tex);
+        var methods = typeof(ItemClass).GetMethods(BindingFlags.Instance | BindingFlags.Public);
+        for (int i = 0; i < methods.Length; i++)
+        {
+            var m = methods[i];
+            if (m.Name != "CloneModel") continue;
+            var p = m.GetParameters();
+            if (p.Length < 6) continue;
+            if (p[0].ParameterType != typeof(World) || p[1].ParameterType != typeof(ItemValue)) continue;
+            if (p[2].ParameterType != typeof(Vector3) || p[3].ParameterType != typeof(Transform)) continue;
+            return m.Invoke(ic, new object[] { world, bv.ToItemValue(), worldPos, parent, BlockShape.MeshPurpose.World, tex }) as Transform;
+        }
+        return null;
     }
 
     static Transform CloneBlockModel33(World world, BlockValue bv, Vector3 worldPos, Transform parent, TextureFullArray tex)
@@ -53,9 +64,14 @@ public static class HSGameApi
         return create.Invoke(null, call) as Transform;
     }
 
-    public static Type NetPackageType32(Type compiled32)
+    public static Type NetPackageType32(string packageName, Type core)
     {
-        return compiled32;
+        Type existing;
+        if (emitted.TryGetValue(packageName, out existing))
+            return existing;
+        var t = EmitConcrete(packageName, core, true);
+        emitted[packageName] = t;
+        return t;
     }
 
     public static Type NetPackageType33(string packageName, Type coreWithoutGetLength)
@@ -63,18 +79,18 @@ public static class HSGameApi
         Type existing;
         if (emitted.TryGetValue(packageName, out existing))
             return existing;
-        var t = EmitConcrete(packageName, coreWithoutGetLength);
+        var t = EmitConcrete(packageName, coreWithoutGetLength, false);
         emitted[packageName] = t;
         return t;
     }
 
-    static Type EmitConcrete(string name, Type core)
+    static Type EmitConcrete(string name, Type core, bool withGetLength)
     {
         if (emitMod == null)
         {
-            var an = new AssemblyName("HSGameApiNet33");
+            var an = new AssemblyName("HSGameApiNet");
             var asm = AppDomain.CurrentDomain.DefineDynamicAssembly(an, AssemblyBuilderAccess.Run);
-            emitMod = asm.DefineDynamicModule("HSGameApiNet33");
+            emitMod = asm.DefineDynamicModule("HSGameApiNet");
         }
         var tb = emitMod.DefineType(name, TypeAttributes.Public | TypeAttributes.Sealed, core);
         var ctor = tb.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, Type.EmptyTypes);
@@ -85,7 +101,44 @@ public static class HSGameApi
         il.Emit(OpCodes.Ldarg_0);
         il.Emit(OpCodes.Call, baseCtor);
         il.Emit(OpCodes.Ret);
+        if (withGetLength) EmitGetLength(tb, core);
         return tb.CreateType();
+    }
+
+    // 3.2 NetPackage.GetLength is abstract. 3.3 removed it. This method is only called on 3.2.
+    static void EmitGetLength(TypeBuilder tb, Type core)
+    {
+        var baseMethod = typeof(NetPackage).GetMethod("GetLength", BindingFlags.Instance | BindingFlags.Public);
+        if (baseMethod == null) return;
+        var mb = tb.DefineMethod("GetLength",
+            MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.ReuseSlot,
+            typeof(int), Type.EmptyTypes);
+        var il = mb.GetILGenerator();
+        var n = il.DeclareLocal(typeof(int));
+        il.Emit(OpCodes.Ldc_I4, 48);
+        il.Emit(OpCodes.Stloc, n);
+        AddStringLength(il, n, core.GetField("text", BindingFlags.Instance | BindingFlags.NonPublic));
+        AddStringLength(il, n, core.GetField("id", BindingFlags.Instance | BindingFlags.NonPublic));
+        il.Emit(OpCodes.Ldloc, n);
+        il.Emit(OpCodes.Ret);
+        tb.DefineMethodOverride(mb, baseMethod);
+    }
+
+    static void AddStringLength(ILGenerator il, LocalBuilder n, FieldInfo field)
+    {
+        if (field == null) return;
+        var skip = il.DefineLabel();
+        var length = typeof(string).GetProperty("Length").GetGetMethod();
+        il.Emit(OpCodes.Ldarg_0);
+        il.Emit(OpCodes.Ldfld, field);
+        il.Emit(OpCodes.Brfalse_S, skip);
+        il.Emit(OpCodes.Ldloc, n);
+        il.Emit(OpCodes.Ldarg_0);
+        il.Emit(OpCodes.Ldfld, field);
+        il.Emit(OpCodes.Callvirt, length);
+        il.Emit(OpCodes.Add);
+        il.Emit(OpCodes.Stloc, n);
+        il.MarkLabel(skip);
     }
 
     public static NetPackage GetNetPackage(Type packageType)
