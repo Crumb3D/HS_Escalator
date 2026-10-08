@@ -18,12 +18,18 @@ public class BlockHSEscalatorDrive : BlockPowered
             string dir = esc.Direction < 0 ? "hsescalatorForward" : "hsescalatorReverse";
             string run = esc.WantedOn ? "hsescalatorStop" : "hsescalatorStart";
             string mode = esc.RunWhenOccupied ? "hsescalatorRunAlways" : "hsescalatorRunOccupied";
-            return new[]
+            int gear = HSEscalatorConfigData.SpeedGear(esc.Speed);
+            var cmds = new BlockActivationCommand[5];
+            int n = 0;
+            cmds[n++] = new BlockActivationCommand(dir, "electric_switch", true, false, null);
+            cmds[n++] = new BlockActivationCommand(run, "lightbulb", true, false, null);
+            cmds[n++] = new BlockActivationCommand(mode, "map", true, false, null);
+            for (int g = 1; g <= 3; g++)
             {
-                new BlockActivationCommand(dir, "electric_switch", true, false, null),
-                new BlockActivationCommand(run, "lightbulb", true, false, null),
-                new BlockActivationCommand(mode, "map", true, false, null)
-            };
+                if (g == gear) continue;
+                cmds[n++] = new BlockActivationCommand("hsescalatorSpeed" + g, "agility", true, false, null);
+            }
+            return cmds;
         }
         catch (Exception e)
         {
@@ -89,6 +95,9 @@ public class BlockHSEscalatorDrive : BlockPowered
         if (name == "hsescalatorStop") return "stop";
         if (name == "hsescalatorRunAlways") return "always";
         if (name == "hsescalatorRunOccupied") return "occupied";
+        if (name == "hsescalatorSpeed1") return "speed1";
+        if (name == "hsescalatorSpeed2") return "speed2";
+        if (name == "hsescalatorSpeed3") return "speed3";
         return null;
     }
 

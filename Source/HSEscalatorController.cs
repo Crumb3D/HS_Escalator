@@ -149,6 +149,13 @@ public class HSEscalatorController : MonoBehaviour
             HSEscalatorConfig.Save();
             return Bound.EscalatorId + " runs when something is on it.";
         }
+        if (cmd == "speed1" || cmd == "speed2" || cmd == "speed3")
+        {
+            int gear = cmd == "speed2" ? 2 : cmd == "speed3" ? 3 : 1;
+            Bound.Speed = HSEscalatorConfigData.SpeedForGear(gear);
+            HSEscalatorConfig.Save();
+            return Bound.EscalatorId + " speed " + gear + ".";
+        }
         return "Unknown panel command.";
     }
 

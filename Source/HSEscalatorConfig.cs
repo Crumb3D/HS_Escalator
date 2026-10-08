@@ -49,7 +49,22 @@ public class HSEscalatorConfigData
     public int Drive2X, Drive2Y, Drive2Z;
     public bool HasDrive2;
 
-    public float Speed = 0.6f;
+    public const float BaseSpeed = 0.6f;
+    public float Speed = BaseSpeed;
+
+    public static int SpeedGear(float speed)
+    {
+        if (speed < BaseSpeed * 1.5f) return 1;
+        if (speed < BaseSpeed * 2.5f) return 2;
+        return 3;
+    }
+
+    public static float SpeedForGear(int gear)
+    {
+        if (gear <= 1) return BaseSpeed;
+        if (gear == 2) return BaseSpeed * 2f;
+        return BaseSpeed * 3f;
+    }
     public int Direction = 1;
     public bool Running;
     public bool WantedOn = true;
@@ -300,7 +315,7 @@ public static class HSEscalatorConfig
         if (d.Steps == null) d.Steps = new List<HSEscalatorStepCell>();
         if (d.Supports == null) d.Supports = new List<HSEscalatorSupportCell>();
         if (string.IsNullOrEmpty(d.EscalatorId)) d.EscalatorId = "esc1";
-        if (d.Speed < 0.15f || d.Speed > 4f) d.Speed = 0.6f;
+        if (d.Speed < 0.15f || d.Speed > 4f) d.Speed = HSEscalatorConfigData.BaseSpeed;
         if (d.Direction != -1 && d.Direction != 1) d.Direction = 1;
         if (d.Width < 1) d.Width = 1;
         if (d.RunSign == 0) d.RunSign = 1;

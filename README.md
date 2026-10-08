@@ -69,7 +69,7 @@ The End / Slope / Flat pieces are optional. A support block is what turns the si
 
 ## Power
 
-Wire the registered panel. Hold E on it for Start/Stop, Forward/Reverse, and Run Always or only when something is on it.
+Wire the registered panel. Hold E on it for Start/Stop, Forward/Reverse, Run Always or only when something is on it, and Speed 1, 2, or 3. The menu shows the two speeds you are not already on. Speed 1 is the normal pace, 2 is double, 3 is triple.
 
 A solid in the return or headroom stops the belt and says why.
 
