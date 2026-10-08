@@ -191,6 +191,23 @@ public static class HSEscalatorConfig
 
     static string FilePath { get { return Path.Combine(RuntimeDir, "HSEscalator.json"); } }
 
+    static string loadedFrom;
+
+    public static bool IsLoaded
+    {
+        get
+        {
+            if (loadedFrom == null) return false;
+            try { return string.Equals(Path.GetFullPath(loadedFrom), Path.GetFullPath(FilePath), StringComparison.OrdinalIgnoreCase); }
+            catch { return false; }
+        }
+    }
+
+    public static void Unload()
+    {
+        loadedFrom = null;
+    }
+
     public static void EvacuateRuntimeFilesFromModFolder()
     {
         var mod = HSEscalatorMod.ModPath;
@@ -282,12 +299,15 @@ public static class HSEscalatorConfig
             return;
         }
         Escalators = new List<HSEscalatorConfigData>();
+        loadedFrom = null;
+        var path = FilePath;
+        bool ok = true;
         try
         {
             AdoptPendingSaveIfNeeded();
-            if (File.Exists(FilePath))
+            if (File.Exists(path))
             {
-                var raw = File.ReadAllText(FilePath);
+                var raw = File.ReadAllText(path);
                 var settings = new JsonSerializerSettings { ObjectCreationHandling = ObjectCreationHandling.Replace };
                 var file = JsonConvert.DeserializeObject<HSEscalatorFile>(raw, settings) ?? new HSEscalatorFile();
                 if (file.Escalators != null) Escalators.AddRange(file.Escalators);
@@ -299,7 +319,19 @@ public static class HSEscalatorConfig
         {
             HSEscalatorDebug.Error("Config load failed, using defaults", e);
             Escalators.Clear();
+            ok = false;
+            try
+            {
+                File.Copy(path, path + ".bad", true);
+                ok = true;
+                HSEscalatorDebug.Info("Kept the unreadable escalator list as HSEscalator.json.bad");
+            }
+            catch (Exception e2)
+            {
+                HSEscalatorDebug.Error("Could not back up the unreadable escalator list; it will not be overwritten this session", e2);
+            }
         }
+        if (ok) loadedFrom = path;
         if (Escalators.Count == 0) Escalators.Add(new HSEscalatorConfigData());
         foreach (var d in Escalators) Normalize(d);
         Use(ById(ActiveId) ?? Escalators[0]);
@@ -343,6 +375,11 @@ public static class HSEscalatorConfig
                 ActiveId = Data.EscalatorId;
             }
             if (HSEscalatorNet.IsRemoteClient) return;
+            if (!IsLoaded)
+            {
+                HSEscalatorDebug.Info("Skipped save: the escalator list for this world was never loaded");
+                return;
+            }
             var dir = RuntimeDir;
             if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
             var file = new HSEscalatorFile
@@ -352,7 +389,14 @@ public static class HSEscalatorConfig
                 MaxDeckCells = HSEscalatorSettings.MaxDeckCells,
                 Escalators = Escalators
             };
-            File.WriteAllText(FilePath, JsonConvert.SerializeObject(file, Formatting.Indented));
+            var path = FilePath;
+            var json = JsonConvert.SerializeObject(file, Formatting.Indented);
+            if (File.Exists(path))
+            {
+                var old = File.ReadAllText(path);
+                if (old != json) File.WriteAllText(path + ".bak", old);
+            }
+            File.WriteAllText(path, json);
             HSEscalatorNet.BroadcastConfig();
         }
         catch (Exception e)

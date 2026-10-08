@@ -61,6 +61,7 @@ public class HSEscalatorController : MonoBehaviour
             c.belt.Destroy();
         }
         if (HSEscalatorNet.IsAuthority) HSEscalatorConfig.Save();
+        HSEscalatorConfig.Unload();
     }
 
     void Push()
