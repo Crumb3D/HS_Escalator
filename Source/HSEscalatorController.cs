@@ -118,6 +118,8 @@ public class HSEscalatorController : MonoBehaviour
     public string ApplyPanel(string cmd)
     {
         if (Bound == null) return "No escalator.";
+        if (!Bound.HasDeck)
+            return "This panel is on " + Bound.EscalatorId + ", which has no steps. Select your escalator, then Register Panel on this panel again.";
         if (cmd == "forward") return SetDirection(1);
         if (cmd == "reverse") return SetDirection(-1);
         if (cmd == "toggleDir") return Reverse();

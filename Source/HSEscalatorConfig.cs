@@ -120,6 +120,24 @@ public class HSEscalatorConfigData
         HasDrive2 = true;
     }
 
+    public void RemoveDrive(Vector3i p)
+    {
+        if (HasDrive2 && Drive2X == p.x && Drive2Y == p.y && Drive2Z == p.z) HasDrive2 = false;
+        if (HasDrive && DriveX == p.x && DriveY == p.y && DriveZ == p.z)
+        {
+            HasDrive = HasDrive2;
+            DriveX = Drive2X;
+            DriveY = Drive2Y;
+            DriveZ = Drive2Z;
+            HasDrive2 = false;
+        }
+    }
+
+    public bool IsEmpty
+    {
+        get { return !HasDeck && End1 == null && End2 == null && DriveCount == 0 && (Steps == null || Steps.Count == 0); }
+    }
+
     public void ClearDrives()
     {
         HasDrive = false;
@@ -413,6 +431,13 @@ public static class HSEscalatorConfig
 
     public static HSEscalatorConfigData NewEscalator()
     {
+        var empty = Escalators.Find(e => e.IsEmpty);
+        if (empty != null)
+        {
+            Use(empty);
+            Save();
+            return empty;
+        }
         int n = 1;
         while (ById("esc" + n) != null) n++;
         var d = new HSEscalatorConfigData { EscalatorId = "esc" + n };

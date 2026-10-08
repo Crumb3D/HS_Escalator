@@ -46,7 +46,7 @@ Straight along X or Z only.
 - **New Escalator** — start a new one (does not change others)
 - **Use Escalator Here** — edit the one you are aiming at
 - **Set End 1 / Set End 2** — opposite corners of the steps
-- **Register Panel** — the Escalator Panel beside an end
+- **Register Panel** — the Escalator Panel beside an end. It links to the escalator you last set ends on or used **Use Escalator Here** on. Doing it on a panel that already runs another escalator moves it over.
 - **Jog belt** — run it for a few seconds so you can see the loop
 - **Reverse** — flip direction
 - **Forget / put back** — world blocks return

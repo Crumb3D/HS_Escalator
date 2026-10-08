@@ -184,19 +184,29 @@ public static class HSEscalatorSetup
         Vector3i p;
         var err = AimedBlock(player, out p);
         if (err != null) return err;
-        BindAimed(p);
-        d = HSEscalatorConfig.Data;
         var world = GameManager.Instance.World;
         var bv = world.GetBlock(p);
         p = BlockHSEscalatorDrive.ParentPos(p, bv);
         if (!(world.GetBlock(p).Block is BlockHSEscalatorDrive))
             return "Aim at an Escalator Panel. That block is " + HSEscalatorWorld.DisplayName(bv) + ".";
-        if (d.HasDeck && d.InDeckXZ(p.x, p.z))
-            return "The panel sits on a step. Place it beside an end, not on the deck.";
-        if (d.IsDrive(p))
+        var owner = HSEscalatorConfig.DriveOwner(p);
+        if (owner == d)
         {
             HSEscalatorConfig.Save();
-            return "That panel is already registered.";
+            return "That panel is already registered to " + d.EscalatorId + ".";
+        }
+        if (!d.HasDeck)
+        {
+            if (owner != null) return "That panel runs " + owner.EscalatorId + ". " + d.EscalatorId + " has no steps yet: Set End 1 and Set End 2 first.";
+            return d.EscalatorId + " has no steps yet. Set End 1 and Set End 2 on the escalator (or Select it), then register the panel.";
+        }
+        if (d.InDeckXZ(p.x, p.z))
+            return "The panel sits on a step. Place it beside an end, not on the deck.";
+        string moved = "";
+        if (owner != null)
+        {
+            owner.RemoveDrive(p);
+            moved = " Moved from " + owner.EscalatorId + ".";
         }
         if (d.DriveCount >= 2 && !d.IsDrive(p))
         {
@@ -211,7 +221,7 @@ public static class HSEscalatorSetup
         HSEscalatorConfig.Save();
         string power;
         bool on = HSEscalatorPower.IsDrivePowered(d, out power);
-        return "Panel " + d.DriveCount + " registered at " + p + ". " + (on ? "Powered — it will run." : power);
+        return "Panel " + d.DriveCount + " registered to " + d.EscalatorId + " at " + p + "." + moved + " " + (on ? "Powered — it will run." : power);
     }
 
     static string Forget(HSEscalatorConfigData d)
