@@ -61,3 +61,4 @@ hsescalatorFlatDesc,blocks,Block,,,,"Level side for a walkway, or the flat steps
 hsescalatorFlatUpperDesc,blocks,Block,,,,"Same level side, shifted up half a block. Use it when the step beside it is the top half of the block."
 loadingTipHSEscalatorRail_title,UI,Menu Tip,,,,"HS Escalator: Handrail"
 loadingTipHSEscalatorRail,UI,Menu Tip,,,,"Place Escalator End, Slope, and Flat pieces beside the steps, not on them. Left and Right are mirrors — rotate so the glass faces the steps. A solid wall with no piece still gets a rubber rail. The rail moves with the belt."
+txName_HSEscalatorGrate,painting,txGroupMetal,,,,"Escalator Grate"

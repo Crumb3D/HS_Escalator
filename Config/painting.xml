@@ -1,0 +1,10 @@
+<configs>
+	<append xpath="/paints">
+		<paint id="246" name="txName_HSEscalatorGrate">
+			<property name="TextureId" value="513"/>
+			<property name="Group" value="txGroupMetal"/>
+			<property name="PaintCost" value="1"/>
+			<property name="SortIndex" value="110"/>
+		</paint>
+	</append>
+</configs>
