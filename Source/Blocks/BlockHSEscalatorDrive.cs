@@ -14,7 +14,6 @@ public class BlockHSEscalatorDrive : BlockPowered
             var pos = ParentPos(_blockPos, _blockValue);
             var esc = HSEscalatorConfig.DriveOwner(pos);
             if (esc == null) return new BlockActivationCommand[0];
-            HSEscalatorConfig.Use(esc);
             string dir = esc.Direction < 0 ? "hsescalatorForward" : "hsescalatorReverse";
             string run = esc.WantedOn ? "hsescalatorStop" : "hsescalatorStart";
             string mode = esc.RunWhenOccupied ? "hsescalatorRunAlways" : "hsescalatorRunOccupied";

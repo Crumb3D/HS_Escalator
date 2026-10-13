@@ -64,11 +64,6 @@ public class HSEscalatorController : MonoBehaviour
         HSEscalatorConfig.Unload();
     }
 
-    void Push()
-    {
-        if (Bound != null) HSEscalatorConfig.Use(Bound);
-    }
-
     public string StatusText()
     {
         var d = Bound ?? D;
@@ -110,7 +105,6 @@ public class HSEscalatorController : MonoBehaviour
     {
         var d = HSEscalatorConfig.DriveOwner(pos);
         if (d == null) return Localization.Get("hsescalatorUnregistered");
-        HSEscalatorConfig.Use(d);
         var c = Ensure(d);
         return c != null ? c.ApplyPanel(cmd) : "No controller.";
     }
@@ -204,7 +198,6 @@ public class HSEscalatorController : MonoBehaviour
     void Tick()
     {
         if (Bound == null) return;
-        Push();
         belt.Bind(Bound);
         var world = GameManager.Instance != null ? GameManager.Instance.World : null;
         if (world == null) return;
