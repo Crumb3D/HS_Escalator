@@ -508,4 +508,46 @@ public static class HSEscalatorConfig
     {
         return Summary(Data);
     }
+
+    public static string HoldingHud()
+    {
+        int total = Saved().Count;
+        var d = Data;
+        if (d == null) return "Active Escalator: none - Total Escalators: " + total;
+        string steps;
+        if (d.HasDeck)
+            steps = d.Length + " long x " + d.Width + " wide, " + (d.IsWalkway ? "flat walkway" : "rise " + (d.RiseHalf / 2f).ToString("0.#") + " blocks");
+        else
+            steps = "not set (" + ((d.End1 != null ? 1 : 0) + (d.End2 != null ? 1 : 0)) + " of 2 ends)";
+        string panels = d.DriveCount == 0 ? "none" : d.DriveCount + " of 2";
+        string power;
+        if (d.DriveCount == 0) power = "No panel";
+        else
+        {
+            string problem;
+            power = HSEscalatorPower.IsDrivePowered(d, out problem) ? "Powered" : (string.IsNullOrEmpty(problem) ? "No" : problem);
+        }
+        if (power.Length > 72) power = power.Substring(0, 69) + "...";
+        string state;
+        if (!d.HasDeck) state = "Not set up";
+        else if (d.DriveCount == 0) state = "Needs a panel";
+        else if (!string.IsNullOrEmpty(d.StopReason)) state = "Stopped: " + d.StopReason;
+        else if (!d.WantedOn) state = "Off";
+        else if (d.Running) state = "Running";
+        else if (d.RunWhenOccupied) state = "Waiting for a rider";
+        else state = "Stopped";
+        if (state.Length > 72) state = state.Substring(0, 69) + "...";
+        var needing = new List<string>();
+        foreach (var e in Saved())
+            if (e.HasDeck && e.DriveCount == 0) needing.Add(e.EscalatorId);
+        string need = needing.Count == 0 ? "none" : string.Join(", ", needing.ToArray());
+        return "Active Escalator: " + d.EscalatorId + " - Total Escalators: " + total
+            + "\nSteps: " + steps
+            + "\nPanels: " + panels
+            + "\nPower: " + power
+            + "\nSpeed: " + HSEscalatorConfigData.SpeedGear(d.Speed) + "   Direction: " + (d.Direction < 0 ? "Reverse" : "Forward")
+            + "\nRuns: " + (d.RunWhenOccupied ? "when someone is on it" : "always")
+            + "\nState: " + state
+            + "\nEscalators needing a panel: " + need;
+    }
 }

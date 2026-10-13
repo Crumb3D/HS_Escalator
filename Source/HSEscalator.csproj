@@ -83,6 +83,7 @@
     <Compile Include="HSEscalatorBelt.cs" />
     <Compile Include="HSEscalatorPaint.cs" />
     <Compile Include="HSEscalatorAtlas.cs" />
+    <Compile Include="HSEscalatorHud.cs" />
     <Compile Include="HSEscalatorRail.cs" />
     <Compile Include="HSEscalatorController.cs" />
     <Compile Include="HSEscalatorSetup.cs" />
