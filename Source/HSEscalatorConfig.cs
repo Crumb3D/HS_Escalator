@@ -178,6 +178,26 @@ public class HSEscalatorConfigData
         }
         return false;
     }
+
+    // Captured steps leave no world block, so aiming uses the deck cells and their tread heights.
+    public bool InDeckCell(int x, int y, int z)
+    {
+        if (!HasDeck) return false;
+        var path = ToPath();
+        if (path == null) return false;
+        for (int c = 0; c < Length; c++)
+        {
+            int stepY = HSEscalatorPath.BlockYFromHeight(Heights[c]);
+            if (y < stepY - 1 || y > stepY + 2) continue;
+            for (int w = 0; w < Width; w++)
+            {
+                int px, pz;
+                path.WorldXZ(c, w, out px, out pz);
+                if (px == x && pz == z) return true;
+            }
+        }
+        return false;
+    }
 }
 
 public class HSEscalatorFile
@@ -469,6 +489,15 @@ public static class HSEscalatorConfig
         if (drive != null) return drive;
         foreach (var d in Escalators)
             if (d.InDeckXZ(pos.x, pos.z)) return d;
+        return null;
+    }
+
+    public static HSEscalatorConfigData AtCell(Vector3i pos)
+    {
+        var drive = DriveOwner(pos);
+        if (drive != null) return drive;
+        foreach (var d in Escalators)
+            if (d != null && d.InDeckCell(pos.x, pos.y, pos.z)) return d;
         return null;
     }
 

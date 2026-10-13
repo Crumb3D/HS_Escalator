@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 using UnityEngine.Scripting;
 
 [Preserve]
@@ -12,6 +13,55 @@ public class ItemActionHSEscalatorTool : ItemAction
         foreach (var a in holding.Actions)
             if (a is ItemActionHSEscalatorTool) return true;
         return false;
+    }
+
+    public static bool IsBuildBlock(WorldRayHitInfo hit, EntityPlayerLocal player)
+    {
+        if (IsBuildBlock(hit)) return true;
+        Vector3i pos;
+        return TryAimedEscalator(player, hit, out pos);
+    }
+
+    public static bool TryAimedEscalator(EntityPlayerLocal player, WorldRayHitInfo hit, out Vector3i pos)
+    {
+        pos = Vector3i.zero;
+        var world = GameManager.Instance != null ? GameManager.Instance.World : null;
+        if (world == null) return false;
+        Ray ray;
+        if (!TryLookRay(player, hit, out ray)) return false;
+        var last = new Vector3i(int.MinValue, 0, 0);
+        for (float t = 0.1f; t <= 12f; t += 0.1f)
+        {
+            var p = ray.origin + ray.direction * t;
+            var vi = new Vector3i(Mathf.FloorToInt(p.x), Mathf.FloorToInt(p.y), Mathf.FloorToInt(p.z));
+            if (vi.x == last.x && vi.y == last.y && vi.z == last.z) continue;
+            last = vi;
+            if (HSEscalatorConfig.AtCell(vi) != null)
+            {
+                pos = vi;
+                return true;
+            }
+            var bv = world.GetBlock(vi);
+            if (!bv.isair && !(bv.Block is BlockHSEscalatorHide)) return false;
+        }
+        return false;
+    }
+
+    static bool TryLookRay(EntityPlayerLocal player, WorldRayHitInfo hit, out Ray ray)
+    {
+        ray = default(Ray);
+        if (player != null)
+        {
+            try
+            {
+                ray = player.GetLookRay();
+                if (ray.direction.sqrMagnitude > 0.0001f) return true;
+            }
+            catch { }
+        }
+        if (hit == null) return false;
+        ray = hit.ray;
+        return ray.direction.sqrMagnitude > 0.0001f;
     }
 
     public static bool IsBuildBlock(WorldRayHitInfo hit)

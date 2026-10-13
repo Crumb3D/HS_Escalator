@@ -12,7 +12,7 @@ public static class HSEscalatorToolPatch
             var playerUI = AccessTools.Field(typeof(PlayerMoveController), "playerUI").GetValue(__instance) as LocalPlayerUI;
             bool holding = ItemActionHSEscalatorTool.IsHolding(player);
             if (holding) ClearPlacementPreview(__instance);
-            bool show = holding && ItemActionHSEscalatorTool.IsBuildBlock(_hitInfo);
+            bool show = holding && ItemActionHSEscalatorTool.IsBuildBlock(_hitInfo, player);
             if (!show)
             {
                 ClearOurs(playerUI);
@@ -90,7 +90,7 @@ public static class HSEscalatorToolPromptClear
                 return;
             var player = __instance.xui != null && __instance.xui.playerUI != null ? __instance.xui.playerUI.entityPlayer : null;
             var hit = player != null ? player.HitInfo : null;
-            if (ItemActionHSEscalatorTool.IsHolding(player) && ItemActionHSEscalatorTool.IsBuildBlock(hit)) return;
+            if (ItemActionHSEscalatorTool.IsHolding(player) && ItemActionHSEscalatorTool.IsBuildBlock(hit, player as EntityPlayerLocal)) return;
             if (__instance.xui != null) XUiC_InteractionPrompt.SetText(__instance.xui.playerUI, null);
         }
         catch { }

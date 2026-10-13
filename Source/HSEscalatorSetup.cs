@@ -75,6 +75,8 @@ public static class HSEscalatorSetup
             case "select":
             {
                 Vector3i p;
+                if (!HasForcedAim && ItemActionHSEscalatorTool.TryAimedEscalator(player, player != null ? player.HitInfo : null, out p))
+                    return HSEscalatorConfig.SelectNearest(p);
                 var err = AimedBlock(player, out p);
                 if (err != null) return err;
                 return HSEscalatorConfig.SelectNearest(p);
