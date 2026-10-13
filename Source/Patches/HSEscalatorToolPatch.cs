@@ -4,12 +4,17 @@ using HarmonyLib;
 [HarmonyPatch(typeof(PlayerMoveController), "HandleInteraction")]
 public static class HSEscalatorToolPatch
 {
+    static readonly System.Reflection.FieldInfo PlayerField = AccessTools.Field(typeof(PlayerMoveController), "entityPlayerLocal");
+    static readonly System.Reflection.FieldInfo PlayerUIField = AccessTools.Field(typeof(PlayerMoveController), "playerUI");
+    static readonly System.Reflection.FieldInfo FocusBoxField = AccessTools.Field(typeof(PlayerMoveController), "focusBoxScript");
+    static readonly System.Reflection.FieldInfo PromptIdField = AccessTools.Field(typeof(XUiC_InteractionPrompt), "ID");
+
     static bool Prefix(PlayerMoveController __instance, WorldRayHitInfo _hitInfo, bool _activate)
     {
         try
         {
-            var player = AccessTools.Field(typeof(PlayerMoveController), "entityPlayerLocal").GetValue(__instance) as EntityPlayerLocal;
-            var playerUI = AccessTools.Field(typeof(PlayerMoveController), "playerUI").GetValue(__instance) as LocalPlayerUI;
+            var player = PlayerField.GetValue(__instance) as EntityPlayerLocal;
+            var playerUI = PlayerUIField.GetValue(__instance) as LocalPlayerUI;
             bool holding = ItemActionHSEscalatorTool.IsHolding(player);
             if (holding) ClearPlacementPreview(__instance);
             bool show = holding && ItemActionHSEscalatorTool.IsBuildBlock(_hitInfo, player);
@@ -38,7 +43,7 @@ public static class HSEscalatorToolPatch
         if (pmc == null) return;
         try
         {
-            var box = AccessTools.Field(typeof(PlayerMoveController), "focusBoxScript").GetValue(pmc) as RenderDisplacedCube;
+            var box = FocusBoxField.GetValue(pmc) as RenderDisplacedCube;
             if (box != null) box.DestroyPreview();
         }
         catch { }
@@ -67,7 +72,7 @@ public static class HSEscalatorToolPatch
     static string CurrentPrompt(LocalPlayerUI playerUI)
     {
         if (playerUI == null || playerUI.xui == null) return null;
-        var id = AccessTools.Field(typeof(XUiC_InteractionPrompt), "ID").GetValue(null) as string;
+        var id = PromptIdField.GetValue(null) as string;
         if (string.IsNullOrEmpty(id)) return null;
         var wg = playerUI.xui.FindWindowGroupByName(id);
         if (wg == null) return null;

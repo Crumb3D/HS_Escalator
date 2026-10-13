@@ -19,6 +19,8 @@ public class HSEscalatorController : MonoBehaviour
     float nextState;
     float nextRail;
     float nextHide;
+    float nextRemoved;
+    float nextEject;
     float jogUntil;
     float occupiedUntil;
     bool beltReady;
@@ -206,7 +208,11 @@ public class HSEscalatorController : MonoBehaviour
         {
             if (HSEscalatorNet.IsAuthority)
             {
-                HSEscalatorWorld.EnsureCapturedRemoved(world, Bound);
+                if (Time.unscaledTime >= nextRemoved)
+                {
+                    nextRemoved = Time.unscaledTime + 0.5f;
+                    HSEscalatorWorld.EnsureCapturedRemoved(world, Bound);
+                }
                 if (Time.unscaledTime >= nextHide)
                 {
                     nextHide = Time.unscaledTime + 1f;
@@ -259,7 +265,11 @@ public class HSEscalatorController : MonoBehaviour
 
         belt.Apply(Bound.Phase, Time.deltaTime);
         if (Bound.Running) CarryRiders(world);
-        EjectTrapped(world, Bound.ToPath());
+        if (Time.unscaledTime >= nextEject)
+        {
+            nextEject = Time.unscaledTime + 0.2f;
+            EjectTrapped(world, Bound.ToPath());
+        }
     }
 
     void TickPower(World world)

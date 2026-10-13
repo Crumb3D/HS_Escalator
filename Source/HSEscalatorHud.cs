@@ -7,13 +7,20 @@ public class HSEscalatorHud : XUiController
 {
     string info = "";
     bool show;
+    float nextText;
 
     public override void Update(float _dt)
     {
         base.Update(_dt);
         var player = xui != null && xui.playerUI != null ? xui.playerUI.entityPlayer as EntityPlayerLocal : null;
         bool holding = ItemActionHSEscalatorTool.IsHolding(player);
-        var next = holding ? HSEscalatorConfig.HoldingHud() : "";
+        string next = info;
+        if (!holding) next = "";
+        else if (!show || UnityEngine.Time.unscaledTime >= nextText)
+        {
+            nextText = UnityEngine.Time.unscaledTime + 0.25f;
+            next = HSEscalatorConfig.HoldingHud();
+        }
         if (holding != show || next != info)
         {
             show = holding;

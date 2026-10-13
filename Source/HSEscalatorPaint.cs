@@ -209,7 +209,7 @@ public class HSEscalatorGrateSkin : MonoBehaviour
     void LateUpdate()
     {
         if (Time.time < nextCheck) return;
-        nextCheck = Time.time + 0.25f;
+        nextCheck = Time.time + (born >= 0f && Time.time - born > 5f ? 2f : 0.25f);
         Paint();
     }
 }
