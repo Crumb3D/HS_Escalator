@@ -24,6 +24,7 @@ public class HSEscalatorController : MonoBehaviour
     float jogUntil;
     float occupiedUntil;
     bool beltReady;
+    AudioSource driveSound;
 
     static HSEscalatorConfigData D { get { return HSEscalatorConfig.Data; } }
 
@@ -60,6 +61,7 @@ public class HSEscalatorController : MonoBehaviour
             if (c == null || c.Bound == null) continue;
             if (HSEscalatorNet.IsAuthority && world != null)
                 HSEscalatorWorld.Restore(world, c.Bound, true);
+            HSEscalatorSounds.Destroy(ref c.driveSound);
             c.belt.Destroy();
         }
         if (HSEscalatorNet.IsAuthority) HSEscalatorConfig.Save();
@@ -185,6 +187,11 @@ public class HSEscalatorController : MonoBehaviour
         belt.Destroy();
     }
 
+    void OnDestroy()
+    {
+        HSEscalatorSounds.Destroy(ref driveSound);
+    }
+
     void LateUpdate()
     {
         try
@@ -199,10 +206,18 @@ public class HSEscalatorController : MonoBehaviour
 
     void Tick()
     {
-        if (Bound == null) return;
+        if (Bound == null)
+        {
+            HSEscalatorSounds.Tick(this, null, ref driveSound);
+            return;
+        }
         belt.Bind(Bound);
         var world = GameManager.Instance != null ? GameManager.Instance.World : null;
-        if (world == null) return;
+        if (world == null)
+        {
+            HSEscalatorSounds.Tick(this, Bound, ref driveSound);
+            return;
+        }
 
         if (Bound.Captured && Bound.HasDeck)
         {
@@ -231,7 +246,11 @@ public class HSEscalatorController : MonoBehaviour
             beltReady = false;
         }
 
-        if (!Bound.Captured || !Bound.HasDeck) return;
+        if (!Bound.Captured || !Bound.HasDeck)
+        {
+            HSEscalatorSounds.Tick(this, Bound, ref driveSound);
+            return;
+        }
 
         if (HSEscalatorNet.IsAuthority)
         {
@@ -264,6 +283,7 @@ public class HSEscalatorController : MonoBehaviour
         }
 
         belt.Apply(Bound.Phase, Time.deltaTime);
+        HSEscalatorSounds.Tick(this, Bound, ref driveSound);
         if (Bound.Running) CarryRiders(world);
         if (Time.unscaledTime >= nextEject)
         {

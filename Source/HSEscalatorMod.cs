@@ -24,7 +24,7 @@ public class HSEscalatorMod : IModApi
         {
             HSEscalatorDebug.Error("Could not move escalator save out of the mod folder", e);
         }
-        HSEscalatorDebug.Info("Init v1.0.0 - " + HSEscalatorPath.SelfTest() + "; setup tool hold E; admin: hsescalator");
+        HSEscalatorDebug.Info("Init v1.0.12 - " + HSEscalatorPath.SelfTest() + "; setup tool hold E; admin: hsescalator");
         HSEscalatorNet.RegisterPackage();
         ModEvents.GameStartDone.RegisterHandler(OnGameStartDone);
         ModEvents.WorldShuttingDown.RegisterHandler(OnWorldShuttingDown);

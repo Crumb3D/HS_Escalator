@@ -66,6 +66,10 @@
       <HintPath>$(ManagedDir)\UnityEngine.PhysicsModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.AudioModule">
+      <HintPath>$(ManagedDir)\UnityEngine.AudioModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEngine.ImageConversionModule">
       <HintPath>$(ManagedDir)\UnityEngine.ImageConversionModule.dll</HintPath>
       <Private>False</Private>
@@ -86,6 +90,7 @@
     <Compile Include="HSEscalatorHud.cs" />
     <Compile Include="HSEscalatorRail.cs" />
     <Compile Include="HSEscalatorController.cs" />
+    <Compile Include="HSEscalatorSounds.cs" />
     <Compile Include="HSEscalatorSetup.cs" />
     <Compile Include="ItemActionHSEscalatorTool.cs" />
     <Compile Include="HSEscalatorPower.cs" />

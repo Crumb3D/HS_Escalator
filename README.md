@@ -73,6 +73,8 @@ Wire the registered panel. Hold E on it for Start/Stop, Forward/Reverse, Run Alw
 
 A solid in the return or headroom stops the belt and says why.
 
+A running belt plays a mechanical drive rumble from underneath. It is loudest on the steps and fades out as you walk away (gone by about 22 m). Dedicated servers stay silent; clients hear it. Speed 2 and 3 raise the pitch a little.
+
 Admin: `giveself hsescalatorTool` / `giveself hsescalatorDrive` and `hsescalator`.
 
 ## Deck size cap (host)
