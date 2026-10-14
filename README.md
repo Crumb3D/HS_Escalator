@@ -83,3 +83,7 @@ No cap by default (`MaxDeckCells` 0). The host — dedicated server, or the sing
 
 - File: `HSEscalatorSettings.json` in the mod folder, or `%AppData%/7DaysToDie/HSEscalator/HSEscalatorSettings.json` (wins), or the world save folder (wins last).
 - Console: `hsescalator maxdeck 256`   (`0` turns the cap off)
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md). Newest first.
