@@ -238,17 +238,20 @@ public abstract class NetPackageHSEscalatorCore : NetPackage
     public override void write(PooledBinaryWriter bw)
     {
         base.write(bw);
-        bw.Write(kind);
-        bw.Write(text ?? "");
-        bw.Write(arg ?? "");
-        bw.Write(id ?? "");
-        bw.Write(direction);
-        bw.Write(phase);
-        bw.Write(running);
-        bw.Write(hasPos);
-        bw.Write(pos.x);
-        bw.Write(pos.y);
-        bw.Write(pos.z);
+        // 3.4 adds span-based Write extensions that make bw.Write(string) ambiguous on newer compilers.
+        // PooledBinaryWriter overrides every BinaryWriter.Write on 3.2-3.4, so this still calls the same code.
+        System.IO.BinaryWriter w = bw;
+        w.Write(kind);
+        w.Write(text ?? "");
+        w.Write(arg ?? "");
+        w.Write(id ?? "");
+        w.Write(direction);
+        w.Write(phase);
+        w.Write(running);
+        w.Write(hasPos);
+        w.Write(pos.x);
+        w.Write(pos.y);
+        w.Write(pos.z);
     }
 
     public override void ProcessPackage(World world, GameManager callbacks)

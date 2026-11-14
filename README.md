@@ -1,5 +1,7 @@
 # HS Escalator
 
+**Version 1.0.13** — one download for **7 Days to Die 3.2, 3.3 and 3.4**. Install on the dedicated server and on every client.
+
 You build the escalator out of half-blocks. The mod takes those blocks and runs them as a moving walkway or a real escalator (level treads, stair rise, fold under, return underneath).
 
 ## How to build one

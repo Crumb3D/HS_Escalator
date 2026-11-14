@@ -79,6 +79,7 @@
     <Compile Include="HSEscalatorMod.cs" />
     <Compile Include="HSGameVersion.cs" />
     <Compile Include="HSGameApi.cs" />
+    <Compile Include="HSInvData.cs" />
     <Compile Include="HSEscalatorDebug.cs" />
     <Compile Include="HSEscalatorConfig.cs" />
     <Compile Include="HSEscalatorSettings.cs" />

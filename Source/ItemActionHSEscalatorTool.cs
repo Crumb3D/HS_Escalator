@@ -102,7 +102,7 @@ public class ItemActionHSEscalatorTool : ItemAction
         if (!_bReleased) return;
         try
         {
-            var player = _actionData != null && _actionData.invData != null ? _actionData.invData.holdingEntity as EntityPlayerLocal : null;
+            var player = _actionData != null && _actionData.invData != null ? HSInvData.HoldingEntity(_actionData.invData) as EntityPlayerLocal : null;
             if (player != null) GameManager.ShowTooltip(player, Localization.Get("hsescalatorToolHint"));
         }
         catch (Exception e)

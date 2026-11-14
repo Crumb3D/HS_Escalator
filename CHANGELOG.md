@@ -1,5 +1,7 @@
 # HS Escalator changelog
 
+**1.0.13** — Works on 7 Days to Die 3.4. 3.4 is on the supported list and uses the 3.3 model and network path, and the escalator network packet builds against the 3.4 writer. Same fixes as the HS Lift 3.4 port by [Germanrazor](https://github.com/Germanrazor/HS_Lift). 3.2 and 3.3 work as before. Also fixed on 3.3 and 3.4: the setup tool click hint shows instead of logging an error.
+
 **1.0.12** — A running belt plays a mechanical drive rumble from underneath. Loudest on the steps, fades as you walk away, silent when the belt is stopped.
 
 **1.0.11** — Less work every frame: grate re-check, captured-step check, trapped-entity check, and the setup HUD text are throttled. Setup-tool reflection is cached.
